@@ -44,13 +44,13 @@ The implementation was built with AI-assisted development tools. My focus was on
 ## Key Technical Decisions
 
 **Why Claude Vision API?**
-Tested multiple approaches for item identification. Claude Vision consistently handled real-world grocery packaging — including partially obscured labels and non-standard fonts — better than alternative approaches, and the API made it easy to iterate on prompt strategy without changing the underlying model.
+Tested multiple approaches for item identification. Claude Vision consistently handled real-world grocery packaging, including partially obscured labels and non-standard fonts, better than alternative approaches, and the API made it easy to iterate on prompt strategy without changing the underlying model.
 
 **Handling model uncertainty**
-One of the core design challenges was deciding what to do when the model was not confident in its identification. Rather than defaulting to a wrong guess, the app prompts the user to confirm or correct — prioritizing accuracy over seamless automation. This was a deliberate, responsible AI choice.
+One of the core design challenges was deciding what to do when the model was not confident in its identification. Rather than defaulting to a wrong guess, the app prompts the user to confirm or correct, prioritizing accuracy over seamless automation. This was a deliberate, responsible AI choice.
 
 **Supabase for real-time data**
-Chose Supabase over a simpler solution because the real-time database capabilities allowed the inventory to update immediately across the UI without page refreshes — important for a household tool that multiple people might use simultaneously.
+Chose Supabase over a simpler solution because the real-time database capabilities allowed the inventory to update immediately across the UI without page refreshes, which is important for a household tool that multiple people might use simultaneously.
 
 
 
