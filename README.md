@@ -1,6 +1,5 @@
 # Pantry-AI
-# AI Pantry Manager
-# Grocery Guru 🛒
+# Your own personal AI pantry manager
 
 A full-stack pantry inventory management app powered by AI — designed to help households track what they have, predict when they'll run out, and reduce food waste.
 
