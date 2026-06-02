@@ -7,7 +7,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Garamola's Grocery Guru",
   description: "Minimalist grocery inventory & predictive depletion tracker",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
