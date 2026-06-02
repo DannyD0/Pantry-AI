@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\Users\\\\CAT 19\\\\Documents\\\\GroceryProject\" && npm run dev)"
+    ]
+  }
+}

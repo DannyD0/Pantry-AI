@@ -1,0 +1,230 @@
+"use client"
+
+import { useState } from "react"
+import {
+  Plus,
+  ShoppingCart,
+  CheckCircle2,
+  Circle,
+  Trash2,
+  AlertTriangle,
+  ChevronDown,
+  Zap,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { useShoppingList } from "@/hooks/useShoppingList"
+import { BottomNav } from "@/components/layout/BottomNav"
+import type { ShoppingListItem } from "@/lib/supabase/types"
+
+export function ShoppingView({ userId }: { userId: string }) {
+  const { pending, purchased, loading, error, addItem, togglePurchased, deleteItem, clearPurchased } =
+    useShoppingList(userId)
+  const [newItemName, setNewItemName] = useState("")
+  const [adding, setAdding] = useState(false)
+  const [showPurchased, setShowPurchased] = useState(false)
+
+  const handleAdd = async () => {
+    const name = newItemName.trim()
+    if (!name) return
+    setAdding(true)
+    await addItem(name)
+    setNewItemName("")
+    setAdding(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border pt-safe">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <h1 className="text-lg font-bold tracking-tight">Shopping List</h1>
+            <p className="text-xs text-muted-foreground">
+              {pending.length} {pending.length === 1 ? "item" : "items"} to buy
+            </p>
+          </div>
+          {purchased.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground h-8"
+              onClick={clearPurchased}
+            >
+              Clear done
+            </Button>
+          )}
+        </div>
+      </header>
+
+      <main className="px-4 py-4 pb-nav space-y-6">
+        {/* Add item input */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Add an item..."
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            className="h-10"
+          />
+          <Button
+            onClick={handleAdd}
+            disabled={adding || !newItemName.trim()}
+            size="sm"
+            className="h-10 px-4 gap-1.5 shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
+        </div>
+
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-14 rounded-xl bg-card animate-pulse" />
+            ))}
+          </div>
+        )}
+
+        {/* Error */}
+        {!loading && error && (
+          <div className="flex items-center gap-2 text-destructive text-sm p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <>
+            {/* To Buy section */}
+            {pending.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center">
+                  <ShoppingCart className="h-7 w-7 text-muted-foreground" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-sm">All clear</h3>
+                  <p className="text-sm text-muted-foreground max-w-[220px]">
+                    Nothing to buy. Add items above, or let low-stock auto-add them.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <section className="space-y-2">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                  To Buy · {pending.length}
+                </h2>
+                {pending.map((item) => (
+                  <ShoppingItem
+                    key={item.id}
+                    item={item}
+                    onToggle={togglePurchased}
+                    onDelete={deleteItem}
+                  />
+                ))}
+              </section>
+            )}
+
+            {/* Purchased section */}
+            {purchased.length > 0 && (
+              <section className="space-y-2">
+                <button
+                  onClick={() => setShowPurchased((p) => !p)}
+                  className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1 py-1"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Done · {purchased.length}
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      showPurchased ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {showPurchased &&
+                  purchased.map((item) => (
+                    <ShoppingItem
+                      key={item.id}
+                      item={item}
+                      onToggle={togglePurchased}
+                      onDelete={deleteItem}
+                    />
+                  ))}
+              </section>
+            )}
+          </>
+        )}
+      </main>
+      <BottomNav />
+    </div>
+  )
+}
+
+interface ShoppingItemProps {
+  item: ShoppingListItem
+  onToggle: (id: string, purchased: boolean) => Promise<{ error?: string; success?: boolean }>
+  onDelete: (id: string) => Promise<{ error?: string; success?: boolean }>
+}
+
+function ShoppingItem({ item, onToggle, onDelete }: ShoppingItemProps) {
+  const [toggling, setToggling] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleToggle = async () => {
+    setToggling(true)
+    await onToggle(item.id, !item.is_purchased)
+    setToggling(false)
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    await onDelete(item.id)
+    setDeleting(false)
+  }
+
+  return (
+    <div
+      className={`flex items-center gap-3 px-3 py-3 rounded-xl border bg-card border-border transition-opacity ${
+        item.is_purchased ? "opacity-50" : ""
+      }`}
+    >
+      <button
+        onClick={handleToggle}
+        disabled={toggling}
+        className="shrink-0 transition-transform active:scale-90"
+        aria-label={item.is_purchased ? "Mark as not purchased" : "Mark as purchased"}
+      >
+        {item.is_purchased ? (
+          <CheckCircle2 className="h-5 w-5 text-green-400" />
+        ) : (
+          <Circle className="h-5 w-5 text-muted-foreground" />
+        )}
+      </button>
+
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <span
+          className={`text-sm font-medium leading-tight ${
+            item.is_purchased ? "line-through text-muted-foreground" : ""
+          }`}
+        >
+          {item.item_name}
+        </span>
+        {item.auto_added && !item.is_purchased && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-yellow-400/80 leading-none shrink-0">
+            <Zap className="h-2.5 w-2.5" />
+            auto
+          </span>
+        )}
+      </div>
+
+      <button
+        onClick={handleDelete}
+        disabled={deleting}
+        className="shrink-0 text-muted-foreground hover:text-destructive transition-colors p-1"
+        aria-label="Remove from list"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
+  )
+}
