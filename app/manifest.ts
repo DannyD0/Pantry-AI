@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Garamola's Grocery Guru",
-    short_name: "Grocery Guru",
+    name: "Pantry AI",
+    short_name: "Pantry AI",
     description: "Minimalist grocery inventory & predictive depletion tracker",
     start_url: "/",
     display: "standalone",

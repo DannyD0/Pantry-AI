@@ -5,12 +5,12 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Garamola's Grocery Guru",
+  title: "Pantry AI",
   description: "Minimalist grocery inventory & predictive depletion tracker",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Grocery Guru",
+    title: "Pantry AI",
   },
 }
 

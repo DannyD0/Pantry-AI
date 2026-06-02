@@ -54,7 +54,7 @@ export function DashboardView({ userId }: { userId: string }) {
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
             {greeting()}
           </p>
-          <h1 className="text-3xl font-bold tracking-tight">Grocery Guru</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Pantry AI</h1>
           <p className={`text-sm font-semibold mt-1 ${statusColor}`}>{statusMsg}</p>
         </div>
 
