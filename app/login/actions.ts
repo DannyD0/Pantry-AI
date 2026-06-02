@@ -5,6 +5,10 @@ import { redirect } from "next/navigation"
 
 export async function sendMagicLink(email: string) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    console.log("[sendMagicLink] SUPABASE_URL domain:", supabaseUrl ? new URL(supabaseUrl).hostname : "MISSING")
+    console.log("[sendMagicLink] SITE_URL:", process.env.NEXT_PUBLIC_SITE_URL ?? "MISSING")
+
     const supabase = createServerClient()
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -15,12 +19,16 @@ export async function sendMagicLink(email: string) {
     })
 
     if (error) {
+      console.log("[sendMagicLink] Supabase error:", error.message)
       return { error: error.message }
     }
 
+    console.log("[sendMagicLink] Success")
     return { success: true }
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Something went wrong. Please try again." }
+    const msg = err instanceof Error ? err.message : "Something went wrong. Please try again."
+    console.log("[sendMagicLink] Caught exception:", msg)
+    return { error: msg }
   }
 }
 
