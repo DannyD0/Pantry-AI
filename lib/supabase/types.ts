@@ -1,7 +1,7 @@
 export type Category = "Protein" | "Vegetable" | "Grain" | "Dairy" | "Essential" | "Other"
 export type UsageFrequency = "daily" | "thrice_weekly" | "weekly"
 
-export interface InventoryItem {
+export type InventoryItem = {
   id: string
   user_id: string
   item_name: string
@@ -17,7 +17,7 @@ export interface InventoryItem {
   image_url: string | null
 }
 
-export interface ShoppingListItem {
+export type ShoppingListItem = {
   id: string
   user_id: string
   item_name: string
@@ -34,15 +34,18 @@ export type Database = {
         Row: InventoryItem
         Insert: Omit<InventoryItem, "id" | "last_updated"> & { id?: string; last_updated?: string }
         Update: Partial<Omit<InventoryItem, "id" | "user_id">>
+        Relationships: []
       }
       shopping_list: {
         Row: ShoppingListItem
         Insert: Omit<ShoppingListItem, "id" | "added_at"> & { id?: string; added_at?: string }
         Update: Partial<Omit<ShoppingListItem, "id" | "user_id">>
+        Relationships: []
       }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
     Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
   }
 }
