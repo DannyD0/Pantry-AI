@@ -65,6 +65,7 @@ const EMPTY_FORM = {
   unit: "oz",
   usage_frequency: "" as UsageFrequency | "",
   barcode: "",
+  expiry_date: "",
 }
 
 export function AddItemDialog({ open, onOpenChange, onAdd, prefill }: AddItemDialogProps) {
@@ -110,6 +111,7 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill }: AddItemDia
       usage_frequency: (form.usage_frequency as UsageFrequency) || null,
       barcode: form.barcode.trim() || null,
       image_url: null,
+      expiry_date: form.expiry_date || null,
     }
 
     const result = await onAdd(payload)
@@ -217,6 +219,20 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill }: AddItemDia
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Expiry Date */}
+          <div className="space-y-1.5">
+            <Label htmlFor="expiry_date" className="text-xs text-muted-foreground">
+              Expiry Date <span className="text-muted-foreground/60">(optional)</span>
+            </Label>
+            <Input
+              id="expiry_date"
+              type="date"
+              value={form.expiry_date}
+              onChange={(e) => setForm((f) => ({ ...f, expiry_date: e.target.value }))}
+              className="h-10 text-sm [color-scheme:dark]"
+            />
           </div>
 
           {error && <p className="text-xs text-destructive">{error}</p>}

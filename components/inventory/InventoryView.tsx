@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Package, AlertTriangle, ShoppingCart } from "lucide-react"
+import { Plus, Package, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { InventoryCard } from "./InventoryCard"
 import { AddItemDialog } from "./AddItemDialog"
 import { useInventory } from "@/hooks/useInventory"
 import { useToast } from "@/hooks/useToast"
-import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastClose } from "@/components/ui/toast"
 import { BottomNav } from "@/components/layout/BottomNav"
+import type { AddItemPayload } from "./AddItemDialog"
 import type { Category } from "@/lib/supabase/types"
 
 const CATEGORY_ORDER: (Category | "All")[] = [
@@ -17,15 +17,36 @@ const CATEGORY_ORDER: (Category | "All")[] = [
 
 export function InventoryView({ userId }: { userId: string }) {
   const { items, loading, error, addItem, updateWeight, deleteItem } = useInventory(userId)
-  const { toasts, toast, dismiss } = useToast()
+  const { toast } = useToast()
   const [addOpen, setAddOpen] = useState(false)
   const [activeFilter, setActiveFilter] = useState<Category | "All">("All")
 
+  const handleAdd = async (payload: AddItemPayload) => {
+    const result = await addItem(payload)
+    if (result.error) toast(`❌ Something went wrong`, "error")
+    else toast(`✅ ${payload.item_name} added to pantry`)
+    return result
+  }
+
   const handleUpdateWeight = async (itemId: string, newWeight: number) => {
+    const item = items.find((i) => i.id === itemId)
+    const wasEmpty = item?.tracking_state === "EMPTY"
     const result = await updateWeight(itemId, newWeight)
-    if (result?.autoAdded && result?.itemName) {
-      toast(`${result.itemName} added to shopping list`)
+    if (result?.error) {
+      toast(`❌ Something went wrong`, "error")
+    } else if (result?.autoAdded && result?.itemName) {
+      toast(`🛒 ${result.itemName} added to shopping list`)
+    } else if (result?.success && item) {
+      toast(wasEmpty ? `✅ ${item.item_name} restocked` : `✅ ${item.item_name} updated`)
     }
+    return result
+  }
+
+  const handleDelete = async (itemId: string) => {
+    const item = items.find((i) => i.id === itemId)
+    const result = await deleteItem(itemId)
+    if (result.error) toast(`❌ Something went wrong`, "error")
+    else if (item) toast(`🗑️ ${item.item_name} removed`)
     return result
   }
 
@@ -33,7 +54,6 @@ export function InventoryView({ userId }: { userId: string }) {
     ? items
     : items.filter((item) => item.category === activeFilter)
 
-  // Sort: low stock first, then by name
   const sorted = [...filtered].sort((a, b) => {
     const aPct = a.original_weight > 0 ? a.current_weight / a.original_weight : 1
     const bPct = b.original_weight > 0 ? b.current_weight / b.original_weight : 1
@@ -89,7 +109,6 @@ export function InventoryView({ userId }: { userId: string }) {
 
       {/* Body */}
       <main className="px-4 py-4 pb-nav space-y-3">
-        {/* Loading */}
         {loading && (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
@@ -98,7 +117,6 @@ export function InventoryView({ userId }: { userId: string }) {
           </div>
         )}
 
-        {/* Error */}
         {!loading && error && (
           <div className="flex items-center gap-2 text-destructive text-sm p-4 bg-destructive/10 rounded-lg border border-destructive/20">
             <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -106,7 +124,6 @@ export function InventoryView({ userId }: { userId: string }) {
           </div>
         )}
 
-        {/* Empty state */}
         {!loading && !error && items.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
             <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center">
@@ -123,42 +140,24 @@ export function InventoryView({ userId }: { userId: string }) {
           </div>
         )}
 
-        {/* No filter results */}
         {!loading && !error && items.length > 0 && sorted.length === 0 && (
           <div className="text-center py-12 text-sm text-muted-foreground">
             No {activeFilter} items yet.
           </div>
         )}
 
-        {/* Inventory cards */}
         {!loading && sorted.map((item) => (
           <InventoryCard
             key={item.id}
             item={item}
             onUpdateWeight={handleUpdateWeight}
-            onDelete={deleteItem}
+            onDelete={handleDelete}
           />
         ))}
       </main>
 
-      <AddItemDialog
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onAdd={addItem}
-      />
-
+      <AddItemDialog open={addOpen} onOpenChange={setAddOpen} onAdd={handleAdd} />
       <BottomNav />
-
-      <ToastProvider swipeDirection="down">
-        {toasts.map((t) => (
-          <Toast key={t.id} onOpenChange={(open) => { if (!open) dismiss(t.id) }} duration={3500}>
-            <ShoppingCart className="h-4 w-4 text-green-400 shrink-0" />
-            <ToastTitle className="flex-1 text-sm">{t.title}</ToastTitle>
-            <ToastClose />
-          </Toast>
-        ))}
-        <ToastViewport />
-      </ToastProvider>
     </div>
   )
 }

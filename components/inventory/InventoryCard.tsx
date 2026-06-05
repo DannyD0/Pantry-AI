@@ -3,12 +3,28 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Trash2, Droplets, Clock, Bell, ShoppingBag } from "lucide-react"
+import { Trash2, Droplets, Clock, Bell, ShoppingBag, CalendarClock } from "lucide-react"
 import { FuelGauge } from "./FuelGauge"
 import { CategoryBadge } from "./CategoryBadge"
 import { UpdateWeightDialog } from "./UpdateWeightDialog"
 import { getStockPercent } from "@/lib/logic/depletion"
 import type { InventoryItem } from "@/lib/supabase/types"
+
+function getExpiryStatus(expiryDate: string | null): {
+  label: string
+  color: string
+} | null {
+  if (!expiryDate) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const expiry = new Date(expiryDate)
+  expiry.setHours(0, 0, 0, 0)
+  const diffDays = Math.round((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays < 0) return { label: "Expired", color: "text-red-400 bg-red-950/50 border-red-900/40" }
+  if (diffDays === 0) return { label: "Expires today", color: "text-red-400 bg-red-950/50 border-red-900/40" }
+  if (diffDays <= 7) return { label: `Exp. in ${diffDays}d`, color: "text-orange-400 bg-orange-950/50 border-orange-900/40" }
+  return null
+}
 
 interface InventoryCardProps {
   item: InventoryItem
@@ -32,6 +48,7 @@ export function InventoryCard({ item, onUpdateWeight, onDelete }: InventoryCardP
   const isEmpty = item.tracking_state === "EMPTY"
   const pct = isEmpty ? 0 : getStockPercent(item.current_weight, item.original_weight)
   const daysLabel = isEmpty ? null : formatDate(item.predicted_empty_date)
+  const expiryStatus = getExpiryStatus(item.expiry_date ?? null)
 
   const pctColor =
     isEmpty ? "text-muted-foreground" :
@@ -82,6 +99,14 @@ export function InventoryCard({ item, onUpdateWeight, onDelete }: InventoryCardP
             currentWeight={isEmpty ? 0 : item.current_weight}
             originalWeight={item.original_weight}
           />
+
+          {/* Expiry badge */}
+          {expiryStatus && (
+            <div className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border w-fit ${expiryStatus.color}`}>
+              <CalendarClock className="h-3 w-3 shrink-0" />
+              {expiryStatus.label}
+            </div>
+          )}
 
           {/* Bottom row */}
           <div className="flex items-center justify-between gap-2">

@@ -22,6 +22,8 @@ export type InventoryItem = {
   predicted_empty_date: string | null
   barcode: string | null
   image_url: string | null
+  // Sprint 7
+  expiry_date: string | null
   // Sprint 6 — automated prediction engine
   consumption_velocity_per_day: number | null
   historical_lifespans: HistoricalLifespan[] | null
@@ -59,6 +61,7 @@ export type Database = {
         > & {
           id?: string
           last_updated?: string
+          expiry_date?: string | null
           tracking_state?: TrackingState
           priority_tier?: PriorityTier
           historical_lifespans?: HistoricalLifespan[] | null

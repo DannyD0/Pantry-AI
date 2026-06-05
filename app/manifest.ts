@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Pantry AI",
     short_name: "Pantry AI",
     description: "Minimalist grocery inventory & predictive depletion tracker",
-    start_url: "/",
+    start_url: "/splash",
     display: "standalone",
     background_color: "#0d0d0d",
     theme_color: "#16a34a",

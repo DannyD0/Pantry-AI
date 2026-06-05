@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { Camera, ImagePlus, X, Loader2, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Category } from "@/lib/supabase/types"
@@ -17,6 +17,15 @@ interface VisionUploaderProps {
   onCancel: () => void
 }
 
+const LOADING_MESSAGES = [
+  "Scanning your haul...",
+  "Checking the shelves...",
+  "Inspecting your groceries...",
+  "Reading the fine print...",
+  "Sniffing out your items...",
+  "Checking the sell-by date...",
+]
+
 type UploadStatus = "idle" | "loading" | "error"
 
 export function VisionUploader({ onIdentify, onCancel }: VisionUploaderProps) {
@@ -25,6 +34,16 @@ export function VisionUploader({ onIdentify, onCancel }: VisionUploaderProps) {
   const [status, setStatus] = useState<UploadStatus>("idle")
   const [preview, setPreview] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [msgIndex, setMsgIndex] = useState(0)
+
+  useEffect(() => {
+    if (status !== "loading") return
+    setMsgIndex(Math.floor(Math.random() * LOADING_MESSAGES.length))
+    const interval = setInterval(() => {
+      setMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length)
+    }, 1800)
+    return () => clearInterval(interval)
+  }, [status])
 
   async function handleFile(file: File) {
     if (!file.type.startsWith("image/")) {
@@ -90,7 +109,9 @@ export function VisionUploader({ onIdentify, onCancel }: VisionUploaderProps) {
         )}
         <div className="text-center space-y-1">
           <p className="font-semibold text-sm">Identifying item…</p>
-          <p className="text-xs text-muted-foreground">Claude Vision is analyzing your photo</p>
+          <p className="text-xs text-muted-foreground transition-all duration-300">
+            {LOADING_MESSAGES[msgIndex]}
+          </p>
         </div>
         <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onCancel}>
           Cancel

@@ -11,6 +11,7 @@ import {
   TrendingDown,
   CheckCircle2,
   Bell,
+  CalendarClock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FuelGauge } from "@/components/inventory/FuelGauge"
@@ -21,6 +22,8 @@ import { getStockPercent } from "@/lib/logic/depletion"
 import { useState } from "react"
 import { AddItemDialog } from "@/components/inventory/AddItemDialog"
 import { CheckInCard } from "@/components/dashboard/CheckInCard"
+import { useToast } from "@/hooks/useToast"
+import type { AddItemPayload } from "@/components/inventory/AddItemDialog"
 
 function greeting() {
   const h = new Date().getHours()
@@ -38,11 +41,32 @@ export function DashboardView({ userId }: { userId: string }) {
   } = useInventory(userId)
   const { pending, loading: listLoading } = useShoppingList(userId)
   const [addOpen, setAddOpen] = useState(false)
+  const { toast } = useToast()
 
   const loading = invLoading || listLoading
 
+  const handleAdd = async (payload: AddItemPayload) => {
+    const result = await addItem(payload)
+    if (result.error) toast(`❌ Something went wrong`, "error")
+    else toast(`✅ ${payload.item_name} added to pantry`)
+    return result
+  }
+
   const pendingVerification = items.filter((i) => i.tracking_state === "PENDING_VERIFICATION")
   const activeItems = items.filter((i) => i.tracking_state !== "EMPTY")
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const sevenDaysOut = new Date(today)
+  sevenDaysOut.setDate(sevenDaysOut.getDate() + 7)
+  const expiringSoon = activeItems
+    .filter((i) => {
+      if (!i.expiry_date) return false
+      const exp = new Date(i.expiry_date)
+      exp.setHours(0, 0, 0, 0)
+      return exp <= sevenDaysOut
+    })
+    .sort((a, b) => new Date(a.expiry_date!).getTime() - new Date(b.expiry_date!).getTime())
   const lowStock = activeItems.filter((i) => getStockPercent(i.current_weight, i.original_weight) < 20)
   const totalItems = activeItems.length
   const pendingCount = pending.length
@@ -166,6 +190,47 @@ export function DashboardView({ userId }: { userId: string }) {
           </section>
         )}
 
+        {/* Expiring Soon */}
+        {!loading && expiringSoon.length > 0 && (
+          <section className="mb-6 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <CalendarClock className="h-3.5 w-3.5 text-orange-400" />
+                Expiring Soon
+              </h2>
+              <Link href="/inventory" className="flex items-center gap-0.5 text-xs text-primary font-medium">
+                View all <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {expiringSoon.slice(0, 3).map((item) => {
+                const exp = new Date(item.expiry_date!)
+                exp.setHours(0, 0, 0, 0)
+                const diffDays = Math.round((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+                const isExpired = diffDays < 0
+                const label = isExpired
+                  ? "Expired"
+                  : diffDays === 0
+                  ? "Expires today"
+                  : `${diffDays}d left`
+                const color = isExpired || diffDays === 0 ? "text-red-400 border-red-900/30" : "text-orange-400 border-orange-900/30"
+                return (
+                  <Link
+                    key={item.id}
+                    href="/inventory"
+                    className={`flex items-center justify-between bg-card border rounded-xl px-3 py-2.5 active:scale-[0.98] transition-transform ${
+                      isExpired || diffDays === 0 ? "border-red-900/30" : "border-orange-900/30"
+                    }`}
+                  >
+                    <span className="text-sm font-medium truncate">{item.item_name}</span>
+                    <span className={`text-xs font-bold shrink-0 ml-2 ${color}`}>{label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Low stock preview */}
         {!loading && lowStock.length > 0 && (
           <section className="mb-6 space-y-2.5">
@@ -254,7 +319,7 @@ export function DashboardView({ userId }: { userId: string }) {
         </section>
       </main>
 
-      <AddItemDialog open={addOpen} onOpenChange={setAddOpen} onAdd={addItem} />
+      <AddItemDialog open={addOpen} onOpenChange={setAddOpen} onAdd={handleAdd} />
       <BottomNav />
     </div>
   )

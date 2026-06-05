@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Package, ScanLine, ShoppingCart } from "lucide-react"
+import { Home, Package, ScanLine, ShoppingCart, Settings } from "lucide-react"
 
 const NAV_ITEMS = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/inventory", icon: Package, label: "Pantry" },
   { href: "/scan", icon: ScanLine, label: "Scan" },
   { href: "/shopping", icon: ShoppingCart, label: "List" },
+  { href: "/settings", icon: Settings, label: "Settings" },
 ] as const
 
 export function BottomNav() {
@@ -23,19 +24,19 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`relative flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors ${
+              className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {isActive && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary" />
               )}
               <Icon
-                className="h-[22px] w-[22px]"
+                className="h-[20px] w-[20px]"
                 strokeWidth={isActive ? 2.5 : 1.75}
               />
               <span
-                className={`text-[10px] font-semibold tracking-wide ${
+                className={`text-[9px] font-semibold tracking-wide ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >

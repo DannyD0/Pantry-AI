@@ -14,12 +14,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useShoppingList } from "@/hooks/useShoppingList"
+import { useToast } from "@/hooks/useToast"
 import { BottomNav } from "@/components/layout/BottomNav"
 import type { ShoppingListItem } from "@/lib/supabase/types"
 
 export function ShoppingView({ userId }: { userId: string }) {
-  const { pending, purchased, loading, error, addItem, togglePurchased, deleteItem, clearPurchased } =
+  const { items, pending, purchased, loading, error, addItem, togglePurchased, deleteItem, clearPurchased } =
     useShoppingList(userId)
+  const { toast } = useToast()
   const [newItemName, setNewItemName] = useState("")
   const [adding, setAdding] = useState(false)
   const [showPurchased, setShowPurchased] = useState(false)
@@ -28,9 +30,27 @@ export function ShoppingView({ userId }: { userId: string }) {
     const name = newItemName.trim()
     if (!name) return
     setAdding(true)
-    await addItem(name)
+    const result = await addItem(name)
+    if (result.error) toast(`❌ Something went wrong`, "error")
+    else toast(`🛒 ${name} added to list`)
     setNewItemName("")
     setAdding(false)
+  }
+
+  const handleToggle = async (id: string, isPurchased: boolean) => {
+    const item = items.find((i) => i.id === id)
+    const result = await togglePurchased(id, isPurchased)
+    if (result.error) toast(`❌ Something went wrong`, "error")
+    else if (isPurchased && item) toast(`✅ Got it! ${item.item_name} checked off`)
+    return result
+  }
+
+  const handleDelete = async (id: string) => {
+    const item = items.find((i) => i.id === id)
+    const result = await deleteItem(id)
+    if (result.error) toast(`❌ Something went wrong`, "error")
+    else if (item) toast(`🗑️ ${item.item_name} removed`)
+    return result
   }
 
   return (
@@ -119,8 +139,8 @@ export function ShoppingView({ userId }: { userId: string }) {
                   <ShoppingItem
                     key={item.id}
                     item={item}
-                    onToggle={togglePurchased}
-                    onDelete={deleteItem}
+                    onToggle={handleToggle}
+                    onDelete={handleDelete}
                   />
                 ))}
               </section>
@@ -146,8 +166,8 @@ export function ShoppingView({ userId }: { userId: string }) {
                     <ShoppingItem
                       key={item.id}
                       item={item}
-                      onToggle={togglePurchased}
-                      onDelete={deleteItem}
+                      onToggle={handleToggle}
+                      onDelete={handleDelete}
                     />
                   ))}
               </section>
