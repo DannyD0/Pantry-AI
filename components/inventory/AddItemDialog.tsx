@@ -20,7 +20,19 @@ import {
 } from "@/components/ui/select"
 import type { Category, UsageFrequency, InventoryItem } from "@/lib/supabase/types"
 
-export type AddItemPayload = Omit<InventoryItem, "id" | "user_id" | "last_updated" | "predicted_empty_date">
+export type AddItemPayload = Omit<
+  InventoryItem,
+  | "id"
+  | "user_id"
+  | "last_updated"
+  | "predicted_empty_date"
+  | "consumption_velocity_per_day"
+  | "historical_lifespans"
+  | "tracking_state"
+  | "priority_tier"
+  | "last_purchased_timestamp"
+  | "volume_multiplier"
+>
 
 export interface AddItemPrefill {
   item_name?: string

@@ -6,9 +6,6 @@ const DAYS_PER_USE: Record<UsageFrequency, number> = {
   weekly: 7,
 }
 
-/**
- * Calculate how many days until an item runs out.
- */
 export function calculateDaysRemaining(
   currentWeight: number,
   originalWeight: number,
@@ -19,9 +16,7 @@ export function calculateDaysRemaining(
   return Math.max(0, Math.round(ratio * DAYS_PER_USE[usageFrequency]))
 }
 
-/**
- * Calculate predicted empty date from today.
- */
+// Frequency-based fallback: used when no velocity data exists yet
 export function calculatePredictedEmptyDate(
   currentWeight: number,
   originalWeight: number,
@@ -33,10 +28,17 @@ export function calculatePredictedEmptyDate(
   return date.toISOString().split("T")[0]
 }
 
-/**
- * Get fuel gauge color based on stock percentage.
- * Green > 50%, Yellow 20–50%, Red < 20%
- */
+// Velocity-based primary prediction: more accurate after first depletion cycle
+export function calculatePredictedEmptyDateFromVelocity(
+  currentWeight: number,
+  velocityPerDay: number
+): string {
+  const days = velocityPerDay > 0 ? Math.max(0, Math.round(currentWeight / velocityPerDay)) : 0
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  return date.toISOString().split("T")[0]
+}
+
 export function getFuelColor(currentWeight: number, originalWeight: number): string {
   if (originalWeight <= 0) return "bg-muted"
   const pct = (currentWeight / originalWeight) * 100
@@ -45,25 +47,15 @@ export function getFuelColor(currentWeight: number, originalWeight: number): str
   return "bg-fuel-low"
 }
 
-/**
- * Get stock percentage (0–100).
- */
 export function getStockPercent(currentWeight: number, originalWeight: number): number {
   if (originalWeight <= 0) return 0
   return Math.min(100, Math.max(0, Math.round((currentWeight / originalWeight) * 100)))
 }
 
-/**
- * Determine if item is low stock (< 20%).
- */
 export function isLowStock(currentWeight: number, originalWeight: number): boolean {
   return getStockPercent(currentWeight, originalWeight) < 20
 }
 
-/**
- * Apply a percentage-slider update.
- * sliderValue is 0–100 (how much has been USED, i.e. 25 = used 25%).
- */
 export function applySliderUpdate(originalWeight: number, usedPercent: number): number {
   return originalWeight * (1 - usedPercent / 100)
 }

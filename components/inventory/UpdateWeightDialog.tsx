@@ -19,11 +19,17 @@ interface UpdateWeightDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onUpdate: (itemId: string, newWeight: number) => Promise<{ error?: string; success?: boolean }>
+  restockMode?: boolean
 }
 
-export function UpdateWeightDialog({ item, open, onOpenChange, onUpdate }: UpdateWeightDialogProps) {
-  const currentPct = getStockPercent(item.current_weight, item.original_weight)
-  // Slider shows "how much is left" (0–100)
+export function UpdateWeightDialog({
+  item,
+  open,
+  onOpenChange,
+  onUpdate,
+  restockMode = false,
+}: UpdateWeightDialogProps) {
+  const currentPct = restockMode ? 100 : getStockPercent(item.current_weight, item.original_weight)
   const [remainingPct, setRemainingPct] = useState(currentPct)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,7 +49,7 @@ export function UpdateWeightDialog({ item, open, onOpenChange, onUpdate }: Updat
   }
 
   function handleOpenChange(open: boolean) {
-    if (!open) setRemainingPct(currentPct)
+    if (!open) setRemainingPct(restockMode ? 100 : currentPct)
     onOpenChange(open)
   }
 
@@ -54,13 +60,17 @@ export function UpdateWeightDialog({ item, open, onOpenChange, onUpdate }: Updat
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="bg-card border-border max-w-sm w-[calc(100vw-2rem)]">
         <DialogHeader>
-          <DialogTitle className="text-base">{item.item_name}</DialogTitle>
+          <DialogTitle className="text-base">
+            {restockMode ? `Restock ${item.item_name}` : item.item_name}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-2">
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">How much is left?</span>
+              <span className="text-sm text-muted-foreground">
+                {restockMode ? "How full is the new container?" : "How much is left?"}
+              </span>
               <span className={`text-2xl font-bold tabular-nums ${fuelColor}`}>
                 {remainingPct}%
               </span>
@@ -97,7 +107,7 @@ export function UpdateWeightDialog({ item, open, onOpenChange, onUpdate }: Updat
             Cancel
           </Button>
           <Button size="sm" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving…" : "Update"}
+            {saving ? "Saving…" : restockMode ? "Restock" : "Update"}
           </Button>
         </DialogFooter>
       </DialogContent>

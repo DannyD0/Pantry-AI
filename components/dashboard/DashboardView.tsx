@@ -10,6 +10,7 @@ import {
   ArrowRight,
   TrendingDown,
   CheckCircle2,
+  Bell,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FuelGauge } from "@/components/inventory/FuelGauge"
@@ -19,6 +20,7 @@ import { BottomNav } from "@/components/layout/BottomNav"
 import { getStockPercent } from "@/lib/logic/depletion"
 import { useState } from "react"
 import { AddItemDialog } from "@/components/inventory/AddItemDialog"
+import { CheckInCard } from "@/components/dashboard/CheckInCard"
 
 function greeting() {
   const h = new Date().getHours()
@@ -26,20 +28,38 @@ function greeting() {
 }
 
 export function DashboardView({ userId }: { userId: string }) {
-  const { items, loading: invLoading, addItem } = useInventory(userId)
+  const {
+    items,
+    loading: invLoading,
+    addItem,
+    confirmEmpty,
+    confirmStillHave,
+    snoozeCheckIn,
+  } = useInventory(userId)
   const { pending, loading: listLoading } = useShoppingList(userId)
   const [addOpen, setAddOpen] = useState(false)
 
   const loading = invLoading || listLoading
 
-  const lowStock = items.filter((i) => getStockPercent(i.current_weight, i.original_weight) < 20)
-  const totalItems = items.length
+  const pendingVerification = items.filter((i) => i.tracking_state === "PENDING_VERIFICATION")
+  const activeItems = items.filter((i) => i.tracking_state !== "EMPTY")
+  const lowStock = activeItems.filter((i) => getStockPercent(i.current_weight, i.original_weight) < 20)
+  const totalItems = activeItems.length
   const pendingCount = pending.length
 
-  const allGood = !loading && lowStock.length === 0 && totalItems > 0
-  const statusColor = lowStock.length > 0 ? "text-yellow-400" : totalItems === 0 ? "text-muted-foreground" : "text-green-400"
+  const allGood = !loading && lowStock.length === 0 && pendingVerification.length === 0 && totalItems > 0
+  const statusColor =
+    pendingVerification.length > 0
+      ? "text-primary"
+      : lowStock.length > 0
+      ? "text-yellow-400"
+      : totalItems === 0
+      ? "text-muted-foreground"
+      : "text-green-400"
   const statusMsg = loading
     ? "Loading…"
+    : pendingVerification.length > 0
+    ? `${pendingVerification.length} check-in${pendingVerification.length > 1 ? "s" : ""} needed`
     : lowStock.length > 0
     ? `${lowStock.length} item${lowStock.length > 1 ? "s" : ""} running low`
     : totalItems === 0
@@ -125,6 +145,27 @@ export function DashboardView({ userId }: { userId: string }) {
           )}
         </div>
 
+        {/* Check-in cards */}
+        {!loading && pendingVerification.length > 0 && (
+          <section className="mb-6 space-y-2.5">
+            <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Bell className="h-3.5 w-3.5 text-primary" />
+              Check-ins needed
+            </h2>
+            <div className="space-y-2">
+              {pendingVerification.map((item) => (
+                <CheckInCard
+                  key={item.id}
+                  item={item}
+                  onConfirmEmpty={confirmEmpty}
+                  onConfirmStillHave={confirmStillHave}
+                  onSnooze={snoozeCheckIn}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Low stock preview */}
         {!loading && lowStock.length > 0 && (
           <section className="mb-6 space-y-2.5">
@@ -179,7 +220,7 @@ export function DashboardView({ userId }: { userId: string }) {
           </section>
         )}
 
-        {/* All-good state when pantry is full */}
+        {/* All-good state */}
         {allGood && (
           <div className="mb-6 flex items-center gap-3 bg-green-950/40 border border-green-900/40 rounded-2xl px-4 py-3">
             <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />

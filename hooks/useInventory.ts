@@ -2,8 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
-import type { InventoryItem } from "@/lib/supabase/types"
-import { calculatePredictedEmptyDate, isLowStock } from "@/lib/logic/depletion"
+import type { HistoricalLifespan, InventoryItem, TrackingState } from "@/lib/supabase/types"
+import {
+  calculatePredictedEmptyDate,
+  calculatePredictedEmptyDateFromVelocity,
+  isLowStock,
+} from "@/lib/logic/depletion"
+import { calculateVelocity } from "@/lib/logic/velocity"
+import { assignPriorityTier } from "@/lib/logic/priority"
 import { triggerShoppingList } from "@/lib/logic/shopping"
 
 export function useInventory(userId: string) {
@@ -15,6 +21,17 @@ export function useInventory(userId: string) {
   const fetchItems = useCallback(async () => {
     setLoading(true)
     setError(null)
+
+    // Promote ACTIVE items whose predicted date has arrived to PENDING_VERIFICATION
+    const today = new Date().toISOString().split("T")[0]
+    await supabase
+      .from("inventory")
+      .update({ tracking_state: "PENDING_VERIFICATION" as TrackingState })
+      .eq("user_id", userId)
+      .eq("tracking_state", "ACTIVE")
+      .lte("predicted_empty_date", today)
+      .not("predicted_empty_date", "is", null)
+
     const { data, error: err } = await supabase
       .from("inventory")
       .select("*")
@@ -24,25 +41,65 @@ export function useInventory(userId: string) {
     if (err) {
       setError(err.message)
     } else {
-      setItems(data ?? [])
+      setItems((data as InventoryItem[]) ?? [])
     }
     setLoading(false)
-  }, [userId])
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchItems()
   }, [fetchItems])
 
-  const addItem = async (item: Omit<InventoryItem, "id" | "user_id" | "last_updated" | "predicted_empty_date">) => {
-    const predicted_empty_date =
-      item.usage_frequency
-        ? calculatePredictedEmptyDate(item.current_weight, item.original_weight, item.usage_frequency)
-        : null
+  // Build the best predicted empty date: velocity-first, frequency-fallback
+  function bestPredictedDate(
+    item: Pick<InventoryItem, "current_weight" | "original_weight" | "usage_frequency" | "consumption_velocity_per_day" | "historical_lifespans">
+  ): string | null {
+    if (item.consumption_velocity_per_day && item.consumption_velocity_per_day > 0) {
+      return calculatePredictedEmptyDateFromVelocity(
+        item.current_weight,
+        item.consumption_velocity_per_day
+      )
+    }
+    if (item.usage_frequency) {
+      return calculatePredictedEmptyDate(
+        item.current_weight,
+        item.original_weight,
+        item.usage_frequency
+      )
+    }
+    return null
+  }
+
+  const addItem = async (
+    item: Omit<
+      InventoryItem,
+      | "id"
+      | "user_id"
+      | "last_updated"
+      | "predicted_empty_date"
+      | "consumption_velocity_per_day"
+      | "historical_lifespans"
+      | "tracking_state"
+      | "priority_tier"
+      | "last_purchased_timestamp"
+      | "volume_multiplier"
+    >
+  ) => {
+    const predicted_empty_date = item.usage_frequency
+      ? calculatePredictedEmptyDate(item.current_weight, item.original_weight, item.usage_frequency)
+      : null
+
+    const priority_tier = assignPriorityTier(item.item_name, item.category ?? null)
 
     const { error: err } = await supabase.from("inventory").insert({
       ...item,
       user_id: userId,
       predicted_empty_date,
+      priority_tier,
+      tracking_state: "ACTIVE",
+      last_purchased_timestamp: new Date().toISOString(),
+      historical_lifespans: [],
+      volume_multiplier: 1.0,
     })
 
     if (err) return { error: err.message }
@@ -54,34 +111,112 @@ export function useInventory(userId: string) {
     const item = items.find((i) => i.id === itemId)
     if (!item) return { error: "Item not found" }
 
-    const predicted_empty_date =
-      item.usage_frequency
-        ? calculatePredictedEmptyDate(newCurrentWeight, item.original_weight, item.usage_frequency)
-        : null
+    // Restocking an empty item: reset to ACTIVE with fresh purchase timestamp
+    const isRestocking = item.tracking_state === "EMPTY" && newCurrentWeight > 0
+    const newTrackingState: TrackingState = isRestocking
+      ? "ACTIVE"
+      : item.tracking_state === "PENDING_VERIFICATION"
+      ? "ACTIVE"
+      : item.tracking_state
+
+    const updatedItem = {
+      ...item,
+      current_weight: newCurrentWeight,
+      consumption_velocity_per_day: item.consumption_velocity_per_day,
+    }
+
+    const predicted_empty_date = bestPredictedDate(updatedItem)
+
+    const updatePayload: Partial<InventoryItem> = {
+      current_weight: newCurrentWeight,
+      predicted_empty_date,
+      tracking_state: newTrackingState,
+      last_updated: new Date().toISOString(),
+    }
+
+    if (isRestocking) {
+      updatePayload.last_purchased_timestamp = new Date().toISOString()
+    }
+
+    const { error: err } = await supabase
+      .from("inventory")
+      .update(updatePayload)
+      .eq("id", itemId)
+
+    if (err) return { error: err.message }
+
+    const refreshed = { ...item, ...updatePayload }
+    const { autoAdded } = await triggerShoppingList(refreshed as InventoryItem)
+
+    await fetchItems()
+    return { success: true, autoAdded, itemName: item.item_name }
+  }
+
+  // User confirmed the item is now empty. timeDeltaDays = how many days ago it ran out.
+  const confirmEmpty = async (itemId: string, timeDeltaDays: number) => {
+    const item = items.find((i) => i.id === itemId)
+    if (!item) return { error: "Item not found" }
+
+    let lifespanDays = 1
+    if (item.last_purchased_timestamp) {
+      const purchaseDate = new Date(item.last_purchased_timestamp)
+      const actualEmptyDate = new Date()
+      actualEmptyDate.setDate(actualEmptyDate.getDate() - timeDeltaDays)
+      lifespanDays = Math.max(
+        1,
+        Math.round(
+          (actualEmptyDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24)
+        )
+      )
+    }
+
+    const existingLifespans: HistoricalLifespan[] = item.historical_lifespans ?? []
+    const newLifespans: HistoricalLifespan[] = [
+      ...existingLifespans,
+      { days: lifespanDays, recorded_at: new Date().toISOString() },
+    ]
+
+    const newVelocity = calculateVelocity(newLifespans, item.original_weight)
 
     const { error: err } = await supabase
       .from("inventory")
       .update({
-        current_weight: newCurrentWeight,
-        predicted_empty_date,
+        current_weight: 0,
+        tracking_state: "EMPTY" as TrackingState,
+        historical_lifespans: newLifespans,
+        consumption_velocity_per_day: newVelocity,
+        predicted_empty_date: null,
         last_updated: new Date().toISOString(),
       })
       .eq("id", itemId)
 
     if (err) return { error: err.message }
 
-    // Auto-add to shopping list if low stock
-    const updatedItem = { ...item, current_weight: newCurrentWeight, predicted_empty_date }
-    const { autoAdded } = await triggerShoppingList(updatedItem)
-
+    await triggerShoppingList({ ...item, current_weight: 0 })
     await fetchItems()
-    return { success: true, autoAdded, itemName: item.item_name }
+    return { success: true }
   }
 
-  const deleteItem = async (itemId: string) => {
+  // User said the item is not empty yet. remainingFraction is 0.0–1.0.
+  const confirmStillHave = async (itemId: string, remainingFraction: number) => {
+    const item = items.find((i) => i.id === itemId)
+    if (!item) return { error: "Item not found" }
+
+    const newCurrentWeight = item.original_weight * remainingFraction
+
+    const predicted_empty_date = bestPredictedDate({
+      ...item,
+      current_weight: newCurrentWeight,
+    })
+
     const { error: err } = await supabase
       .from("inventory")
-      .delete()
+      .update({
+        current_weight: newCurrentWeight,
+        predicted_empty_date,
+        tracking_state: "ACTIVE" as TrackingState,
+        last_updated: new Date().toISOString(),
+      })
       .eq("id", itemId)
 
     if (err) return { error: err.message }
@@ -89,5 +224,39 @@ export function useInventory(userId: string) {
     return { success: true }
   }
 
-  return { items, loading, error, addItem, updateWeight, deleteItem, refetch: fetchItems }
+  // Snooze a check-in: push predicted date forward 2 days and reset to ACTIVE
+  const snoozeCheckIn = async (itemId: string) => {
+    const snoozed = new Date()
+    snoozed.setDate(snoozed.getDate() + 2)
+
+    await supabase
+      .from("inventory")
+      .update({
+        tracking_state: "ACTIVE" as TrackingState,
+        predicted_empty_date: snoozed.toISOString().split("T")[0],
+      })
+      .eq("id", itemId)
+
+    await fetchItems()
+  }
+
+  const deleteItem = async (itemId: string) => {
+    const { error: err } = await supabase.from("inventory").delete().eq("id", itemId)
+    if (err) return { error: err.message }
+    await fetchItems()
+    return { success: true }
+  }
+
+  return {
+    items,
+    loading,
+    error,
+    addItem,
+    updateWeight,
+    confirmEmpty,
+    confirmStillHave,
+    snoozeCheckIn,
+    deleteItem,
+    refetch: fetchItems,
+  }
 }
