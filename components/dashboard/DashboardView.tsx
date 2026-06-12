@@ -5,52 +5,36 @@ import {
   Package,
   ShoppingCart,
   AlertTriangle,
-  Plus,
-  ScanLine,
   ArrowRight,
   TrendingDown,
   CheckCircle2,
   Bell,
   CalendarClock,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { FuelGauge } from "@/components/inventory/FuelGauge"
 import { useInventory } from "@/hooks/useInventory"
 import { useShoppingList } from "@/hooks/useShoppingList"
 import { BottomNav } from "@/components/layout/BottomNav"
+import { ProfileButton } from "@/components/layout/ProfileButton"
 import { getStockPercent } from "@/lib/logic/depletion"
-import { useState } from "react"
-import { AddItemDialog } from "@/components/inventory/AddItemDialog"
 import { CheckInCard } from "@/components/dashboard/CheckInCard"
-import { useToast } from "@/hooks/useToast"
-import type { AddItemPayload } from "@/components/inventory/AddItemDialog"
 
 function greeting() {
   const h = new Date().getHours()
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"
 }
 
-export function DashboardView({ userId }: { userId: string }) {
+export function DashboardView({ userId, userName }: { userId: string; userName: string }) {
   const {
     items,
     loading: invLoading,
-    addItem,
     confirmEmpty,
     confirmStillHave,
     snoozeCheckIn,
   } = useInventory(userId)
   const { pending, loading: listLoading } = useShoppingList(userId)
-  const [addOpen, setAddOpen] = useState(false)
-  const { toast } = useToast()
 
   const loading = invLoading || listLoading
-
-  const handleAdd = async (payload: AddItemPayload) => {
-    const result = await addItem(payload)
-    if (result.error) toast(`❌ Something went wrong`, "error")
-    else toast(`✅ ${payload.item_name} added to pantry`)
-    return result
-  }
 
   const pendingVerification = items.filter((i) => i.tracking_state === "PENDING_VERIFICATION")
   const activeItems = items.filter((i) => i.tracking_state !== "EMPTY")
@@ -94,12 +78,19 @@ export function DashboardView({ userId }: { userId: string }) {
     <div className="min-h-screen bg-background">
       <main className="px-4 pb-nav max-w-lg mx-auto">
         {/* Hero header */}
-        <div className="pt-14 pb-6 space-y-0.5">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
-            {greeting()}
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight">Pantry AI</h1>
-          <p className={`text-sm font-semibold mt-1 ${statusColor}`}>{statusMsg}</p>
+        <div className="pt-14 pb-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-0.5 min-w-0">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
+                Pantry AI
+              </p>
+              <h1 className="text-3xl font-bold tracking-tight truncate">
+                {greeting()}, {userName}
+              </h1>
+              <p className={`text-sm font-semibold mt-1 ${statusColor}`}>{statusMsg}</p>
+            </div>
+            <ProfileButton className="mt-1" />
+          </div>
         </div>
 
         {/* Stat cards */}
@@ -248,7 +239,6 @@ export function DashboardView({ userId }: { userId: string }) {
             </div>
             <div className="space-y-2">
               {lowStock.slice(0, 4).map((item) => {
-                const pct = getStockPercent(item.current_weight, item.original_weight)
                 const dateStr = item.predicted_empty_date
                   ? new Date(item.predicted_empty_date).toLocaleDateString("en-US", {
                       month: "short",
@@ -264,14 +254,9 @@ export function DashboardView({ userId }: { userId: string }) {
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium truncate">{item.item_name}</span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {dateStr && (
-                            <span className="text-[11px] text-muted-foreground">{dateStr}</span>
-                          )}
-                          <span className="text-xs font-bold text-red-400 tabular-nums">
-                            {pct}%
-                          </span>
-                        </div>
+                        {dateStr && (
+                          <span className="text-[11px] text-muted-foreground shrink-0">{dateStr}</span>
+                        )}
                       </div>
                       <FuelGauge
                         currentWeight={item.current_weight}
@@ -295,31 +280,8 @@ export function DashboardView({ userId }: { userId: string }) {
           </div>
         )}
 
-        {/* Quick actions */}
-        <section className="space-y-2.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Quick Add
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              className="h-12 gap-2 text-sm font-medium"
-              onClick={() => setAddOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Add Item
-            </Button>
-            <Link href="/scan" className="block">
-              <Button variant="outline" className="w-full h-12 gap-2 text-sm font-medium">
-                <ScanLine className="h-4 w-4" />
-                Scan
-              </Button>
-            </Link>
-          </div>
-        </section>
       </main>
 
-      <AddItemDialog open={addOpen} onOpenChange={setAddOpen} onAdd={handleAdd} />
       <BottomNav />
     </div>
   )

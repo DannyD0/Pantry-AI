@@ -2,7 +2,16 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
-import type { ShoppingListItem } from "@/lib/supabase/types"
+import { restockFromShoppingItem, type RestockResult } from "@/lib/logic/restock"
+import type { Category, ShoppingListItem } from "@/lib/supabase/types"
+
+export interface AddListItemPayload {
+  item_name: string
+  quantity?: number
+  weight_per_unit?: number | null
+  unit?: string | null
+  category?: Category | null
+}
 
 export function useShoppingList(userId: string) {
   const [items, setItems] = useState<ShoppingListItem[]>([])
@@ -45,11 +54,14 @@ export function useShoppingList(userId: string) {
     }
   }, [fetchItems, userId])
 
-  const addItem = async (itemName: string, quantity = 1) => {
+  const addItem = async (payload: AddListItemPayload) => {
     const { error: err } = await supabase.from("shopping_list").insert({
       user_id: userId,
-      item_name: itemName,
-      quantity,
+      item_name: payload.item_name,
+      quantity: payload.quantity ?? 1,
+      weight_per_unit: payload.weight_per_unit ?? null,
+      unit: payload.unit ?? null,
+      category: payload.category ?? null,
       is_purchased: false,
       auto_added: false,
     })
@@ -58,15 +70,26 @@ export function useShoppingList(userId: string) {
     return { success: true }
   }
 
+  /**
+   * Toggle purchased state. Checking an item off triggers smart-match restock:
+   * existing pantry items get stock added on top, unknown items are created.
+   */
   const togglePurchased = async (itemId: string, isPurchased: boolean) => {
+    const item = items.find((i) => i.id === itemId)
     const { error: err } = await supabase
       .from("shopping_list")
       .update({ is_purchased: isPurchased })
       .eq("id", itemId)
 
     if (err) return { error: err.message }
+
+    let restock: RestockResult | undefined
+    if (isPurchased && item) {
+      restock = await restockFromShoppingItem(item)
+    }
+
     await fetchItems()
-    return { success: true }
+    return { success: true, restock }
   }
 
   const deleteItem = async (itemId: string) => {

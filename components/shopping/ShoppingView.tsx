@@ -9,39 +9,89 @@ import {
   Trash2,
   AlertTriangle,
   ChevronDown,
-  Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useShoppingList } from "@/hooks/useShoppingList"
 import { useToast } from "@/hooks/useToast"
 import { BottomNav } from "@/components/layout/BottomNav"
-import type { ShoppingListItem } from "@/lib/supabase/types"
+import { ProfileButton } from "@/components/layout/ProfileButton"
+import { isValidQuantity, isValidWeight, sanitizeText } from "@/lib/logic/validate"
+import type { Category, ShoppingListItem } from "@/lib/supabase/types"
+
+const CATEGORIES: Category[] = ["Protein", "Vegetable", "Grain", "Dairy", "Essential", "Other"]
+
+const EMPTY_FORM = {
+  item_name: "",
+  quantity: "1",
+  weight_per_unit: "",
+  unit: "oz",
+  category: "" as Category | "",
+}
 
 export function ShoppingView({ userId }: { userId: string }) {
   const { items, pending, purchased, loading, error, addItem, togglePurchased, deleteItem, clearPurchased } =
     useShoppingList(userId)
   const { toast } = useToast()
-  const [newItemName, setNewItemName] = useState("")
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [showDetails, setShowDetails] = useState(false)
   const [adding, setAdding] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
   const [showPurchased, setShowPurchased] = useState(false)
 
   const handleAdd = async () => {
-    const name = newItemName.trim()
+    const name = sanitizeText(form.item_name)
     if (!name) return
+
+    const quantity = parseInt(form.quantity, 10) || 1
+    if (!isValidQuantity(quantity)) {
+      setFormError("Quantity must be between 1 and 99.")
+      return
+    }
+    const weightPerUnit = form.weight_per_unit ? parseFloat(form.weight_per_unit) : null
+    if (weightPerUnit !== null && !isValidWeight(weightPerUnit)) {
+      setFormError("Enter a valid weight per unit.")
+      return
+    }
+
     setAdding(true)
-    const result = await addItem(name)
+    setFormError(null)
+    const result = await addItem({
+      item_name: name,
+      quantity,
+      weight_per_unit: weightPerUnit,
+      unit: weightPerUnit !== null ? sanitizeText(form.unit, 12) || "oz" : null,
+      category: (form.category as Category) || null,
+    })
     if (result.error) toast(`❌ Something went wrong`, "error")
     else toast(`🛒 ${name} added to list`)
-    setNewItemName("")
+    setForm(EMPTY_FORM)
+    setShowDetails(false)
     setAdding(false)
   }
 
   const handleToggle = async (id: string, isPurchased: boolean) => {
     const item = items.find((i) => i.id === id)
     const result = await togglePurchased(id, isPurchased)
-    if (result.error) toast(`❌ Something went wrong`, "error")
-    else if (isPurchased && item) toast(`✅ Got it! ${item.item_name} checked off`)
+    if (result.error) {
+      toast(`❌ Something went wrong`, "error")
+    } else if (isPurchased && item) {
+      if (result.restock?.action === "added_stock") {
+        toast(`✅ ${result.restock.itemName} restocked in pantry`)
+      } else if (result.restock?.action === "created") {
+        toast(`✅ ${result.restock.itemName} added to pantry`)
+      } else {
+        toast(`✅ Got it! ${item.item_name} checked off`)
+      }
+    }
     return result
   }
 
@@ -64,38 +114,116 @@ export function ShoppingView({ userId }: { userId: string }) {
               {pending.length} {pending.length === 1 ? "item" : "items"} to buy
             </p>
           </div>
-          {purchased.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground h-8"
-              onClick={clearPurchased}
-            >
-              Clear done
-            </Button>
-          )}
+          <div className="flex items-center gap-1.5">
+            {purchased.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground h-8"
+                onClick={clearPurchased}
+              >
+                Clear done
+              </Button>
+            )}
+            <ProfileButton />
+          </div>
         </div>
       </header>
 
       <main className="px-4 py-4 pb-nav space-y-6">
-        {/* Add item input */}
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add an item..."
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-            className="h-10"
-          />
-          <Button
-            onClick={handleAdd}
-            disabled={adding || !newItemName.trim()}
-            size="sm"
-            className="h-10 px-4 gap-1.5 shrink-0"
+        {/* Add item form */}
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Add an item..."
+              value={form.item_name}
+              onChange={(e) => setForm((f) => ({ ...f, item_name: e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              maxLength={120}
+              className="h-10"
+            />
+            <Button
+              onClick={handleAdd}
+              disabled={adding || !form.item_name.trim()}
+              size="sm"
+              className="h-10 px-4 gap-1.5 shrink-0"
+            >
+              <Plus className="h-4 w-4" />
+              Add
+            </Button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowDetails((d) => !d)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-1"
           >
-            <Plus className="h-4 w-4" />
-            Add
-          </Button>
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform duration-200 ${showDetails ? "rotate-180" : ""}`}
+            />
+            Details — qty, weight, category
+          </button>
+
+          {showDetails && (
+            <div className="grid grid-cols-3 gap-2 bg-card border border-border rounded-xl p-3">
+              <div className="space-y-1">
+                <Label htmlFor="sl-qty" className="text-[11px] text-muted-foreground">Qty</Label>
+                <Input
+                  id="sl-qty"
+                  type="number"
+                  min="1"
+                  max="99"
+                  value={form.quantity}
+                  onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+                  inputMode="numeric"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="sl-weight" className="text-[11px] text-muted-foreground">Weight/unit</Label>
+                <Input
+                  id="sl-weight"
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="e.g. 16"
+                  value={form.weight_per_unit}
+                  onChange={(e) => setForm((f) => ({ ...f, weight_per_unit: e.target.value }))}
+                  inputMode="decimal"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="sl-unit" className="text-[11px] text-muted-foreground">Unit</Label>
+                <Input
+                  id="sl-unit"
+                  placeholder="oz"
+                  value={form.unit}
+                  onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
+                  maxLength={12}
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="col-span-3 space-y-1">
+                <Label className="text-[11px] text-muted-foreground">Category</Label>
+                <Select
+                  value={form.category}
+                  onValueChange={(v) => setForm((f) => ({ ...f, category: v as Category }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {formError && <p className="text-xs text-destructive px-1">{formError}</p>}
         </div>
 
         {/* Loading skeleton */}
@@ -186,9 +314,23 @@ interface ShoppingItemProps {
   onDelete: (id: string) => Promise<{ error?: string; success?: boolean }>
 }
 
+function formatDetails(item: ShoppingListItem): string | null {
+  const parts: string[] = []
+  if (item.quantity > 1 || item.weight_per_unit) {
+    parts.push(
+      item.weight_per_unit
+        ? `${item.quantity} × ${item.weight_per_unit}${item.unit ?? ""}`
+        : `× ${item.quantity}`
+    )
+  }
+  if (item.category) parts.push(item.category)
+  return parts.length > 0 ? parts.join(" · ") : null
+}
+
 function ShoppingItem({ item, onToggle, onDelete }: ShoppingItemProps) {
   const [toggling, setToggling] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const details = formatDetails(item)
 
   const handleToggle = async () => {
     setToggling(true)
@@ -221,19 +363,16 @@ function ShoppingItem({ item, onToggle, onDelete }: ShoppingItemProps) {
         )}
       </button>
 
-      <div className="flex-1 min-w-0 flex items-center gap-2">
+      <div className="flex-1 min-w-0">
         <span
-          className={`text-sm font-medium leading-tight ${
+          className={`block text-sm font-medium leading-tight truncate ${
             item.is_purchased ? "line-through text-muted-foreground" : ""
           }`}
         >
           {item.item_name}
         </span>
-        {item.auto_added && !item.is_purchased && (
-          <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-yellow-400/80 leading-none shrink-0">
-            <Zap className="h-2.5 w-2.5" />
-            auto
-          </span>
+        {details && (
+          <span className="block text-[11px] text-muted-foreground mt-0.5 truncate">{details}</span>
         )}
       </div>
 

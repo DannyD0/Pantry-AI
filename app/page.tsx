@@ -10,5 +10,10 @@ export default async function HomePage() {
 
   if (!session) redirect("/login")
 
-  return <DashboardView userId={session.user.id} />
+  const userName =
+    (session.user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
+    session.user.email?.split("@")[0] ||
+    "there"
+
+  return <DashboardView userId={session.user.id} userName={userName} />
 }

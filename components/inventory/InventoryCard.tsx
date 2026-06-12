@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Trash2, Droplets, Clock, Bell, ShoppingBag, CalendarClock } from "lucide-react"
+import { Trash2, Droplets, Clock, ShoppingBag, CalendarClock } from "lucide-react"
 import { FuelGauge } from "./FuelGauge"
 import { CategoryBadge } from "./CategoryBadge"
 import { UpdateWeightDialog } from "./UpdateWeightDialog"
@@ -75,13 +75,6 @@ export function InventoryCard({ item, onUpdateWeight, onDelete }: InventoryCardP
               )}
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              {/* HIGH priority badge */}
-              {item.priority_tier === "HIGH" && !isEmpty && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-orange-950/60 text-orange-400 border border-orange-900/40 font-medium">
-                  <Bell className="h-2.5 w-2.5" />
-                  High
-                </span>
-              )}
               {item.category && <CategoryBadge category={item.category} />}
               <Button
                 variant="ghost"
@@ -94,10 +87,11 @@ export function InventoryCard({ item, onUpdateWeight, onDelete }: InventoryCardP
             </div>
           </div>
 
-          {/* Fuel gauge */}
+          {/* Graduated fuel gauge */}
           <FuelGauge
             currentWeight={isEmpty ? 0 : item.current_weight}
             originalWeight={item.original_weight}
+            showScale
           />
 
           {/* Expiry badge */}
@@ -123,10 +117,7 @@ export function InventoryCard({ item, onUpdateWeight, onDelete }: InventoryCardP
               ) : (
                 <>
                   <div className="flex items-baseline gap-1.5">
-                    <span className={`text-lg font-bold tabular-nums leading-none ${pctColor}`}>
-                      {pct}%
-                    </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className={`text-sm font-semibold leading-none ${pctColor}`}>
                       {item.current_weight.toFixed(0)}{item.unit} left
                     </span>
                     {hasVelocity && (

@@ -4,10 +4,11 @@ import { useState } from "react"
 import { Plus, Package, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { InventoryCard } from "./InventoryCard"
-import { AddItemDialog } from "./AddItemDialog"
+import { AddItemFlow } from "./AddItemFlow"
 import { useInventory } from "@/hooks/useInventory"
 import { useToast } from "@/hooks/useToast"
 import { BottomNav } from "@/components/layout/BottomNav"
+import { ProfileButton } from "@/components/layout/ProfileButton"
 import type { AddItemPayload } from "./AddItemDialog"
 import type { Category } from "@/lib/supabase/types"
 
@@ -79,10 +80,13 @@ export function InventoryView({ userId }: { userId: string }) {
               )}
             </p>
           </div>
-          <Button size="sm" className="gap-1.5 h-8" onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add Item
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" className="gap-1.5 h-8" onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Add Item
+            </Button>
+            <ProfileButton />
+          </div>
         </div>
 
         {/* Category filter pills */}
@@ -156,7 +160,7 @@ export function InventoryView({ userId }: { userId: string }) {
         ))}
       </main>
 
-      <AddItemDialog open={addOpen} onOpenChange={setAddOpen} onAdd={handleAdd} />
+      <AddItemFlow open={addOpen} onOpenChange={setAddOpen} onAdd={handleAdd} />
       <BottomNav />
     </div>
   )

@@ -2,14 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Package, ScanLine, ShoppingCart, Settings } from "lucide-react"
+import { Home, Package, ShoppingCart } from "lucide-react"
 
 const NAV_ITEMS = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/inventory", icon: Package, label: "Pantry" },
-  { href: "/scan", icon: ScanLine, label: "Scan" },
   { href: "/shopping", icon: ShoppingCart, label: "List" },
-  { href: "/settings", icon: Settings, label: "Settings" },
 ] as const
 
 export function BottomNav() {

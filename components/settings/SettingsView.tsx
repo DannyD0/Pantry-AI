@@ -135,7 +135,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
           </form>
         </section>
 
-        <p className="text-center text-xs text-muted-foreground/40 pb-2">Pantry AI · Sprint 7</p>
+        <p className="text-center text-xs text-muted-foreground/40 pb-2">Pantry AI · Semad Tech</p>
       </main>
 
       <BottomNav />

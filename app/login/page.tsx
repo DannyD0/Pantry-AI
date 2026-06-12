@@ -16,6 +16,8 @@ export default function LoginPage() {
         </div>
 
         <LoginForm />
+
+        <p className="text-center text-xs text-muted-foreground/40">Semad Tech</p>
       </div>
     </main>
   )

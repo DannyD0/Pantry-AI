@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { isValidDateString, isValidWeight, sanitizeText } from "@/lib/logic/validate"
 import type { Category, UsageFrequency, InventoryItem } from "@/lib/supabase/types"
 
 export type AddItemPayload = Omit<
@@ -41,6 +42,7 @@ export interface AddItemPrefill {
   original_weight?: string
   unit?: string
   barcode?: string
+  expiry_date?: string
 }
 
 interface AddItemDialogProps {
@@ -48,6 +50,8 @@ interface AddItemDialogProps {
   onOpenChange: (open: boolean) => void
   onAdd: (item: AddItemPayload) => Promise<{ error?: string; success?: boolean }>
   prefill?: AddItemPrefill
+  /** Informational banner shown above the form (e.g. lookup fallback messages). */
+  notice?: string
 }
 
 const CATEGORIES: Category[] = ["Protein", "Vegetable", "Grain", "Dairy", "Essential", "Other"]
@@ -68,7 +72,7 @@ const EMPTY_FORM = {
   expiry_date: "",
 }
 
-export function AddItemDialog({ open, onOpenChange, onAdd, prefill }: AddItemDialogProps) {
+export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: AddItemDialogProps) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -94,22 +98,24 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill }: AddItemDia
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.item_name.trim()) return setError("Item name is required.")
+    if (!sanitizeText(form.item_name)) return setError("Item name is required.")
     const originalWeight = parseFloat(form.original_weight)
-    if (!originalWeight || originalWeight <= 0) return setError("Enter a valid weight.")
+    if (!isValidWeight(originalWeight)) return setError("Enter a valid weight.")
+    if (form.expiry_date && !isValidDateString(form.expiry_date))
+      return setError("Enter a valid expiry date.")
 
     setSaving(true)
     setError(null)
 
     const payload: AddItemPayload = {
-      item_name: form.item_name.trim(),
-      brand: form.brand.trim() || null,
+      item_name: sanitizeText(form.item_name),
+      brand: sanitizeText(form.brand) || null,
       category: (form.category as Category) || null,
       original_weight: originalWeight,
       current_weight: originalWeight,
-      unit: form.unit.trim() || "oz",
+      unit: sanitizeText(form.unit, 12) || "oz",
       usage_frequency: (form.usage_frequency as UsageFrequency) || null,
-      barcode: form.barcode.trim() || null,
+      barcode: sanitizeText(form.barcode, 20) || null,
       image_url: null,
       expiry_date: form.expiry_date || null,
     }
@@ -129,6 +135,12 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill }: AddItemDia
         <DialogHeader>
           <DialogTitle>Add Item</DialogTitle>
         </DialogHeader>
+
+        {notice && (
+          <p className="text-xs text-muted-foreground bg-secondary/60 border border-border rounded-lg p-3">
+            {notice}
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4 py-1">
           {/* Item Name */}

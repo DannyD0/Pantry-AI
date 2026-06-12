@@ -41,6 +41,10 @@ export type ShoppingListItem = {
   added_at: string
   is_purchased: boolean
   auto_added: boolean
+  // Sprint 8 — details used for smart-match restock
+  weight_per_unit: number | null
+  unit: string | null
+  category: Category | null
 }
 
 export type Database = {
@@ -74,7 +78,13 @@ export type Database = {
       }
       shopping_list: {
         Row: ShoppingListItem
-        Insert: Omit<ShoppingListItem, "id" | "added_at"> & { id?: string; added_at?: string }
+        Insert: Omit<ShoppingListItem, "id" | "added_at" | "weight_per_unit" | "unit" | "category"> & {
+          id?: string
+          added_at?: string
+          weight_per_unit?: number | null
+          unit?: string | null
+          category?: Category | null
+        }
         Update: Partial<Omit<ShoppingListItem, "id" | "user_id">>
         Relationships: []
       }

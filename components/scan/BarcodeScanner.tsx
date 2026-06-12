@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-// Minimal type declaration for BarcodeDetector Web API
+// Minimal interface shared by the native BarcodeDetector and the ponyfill
 interface BarcodeDetectorResult {
   rawValue: string
   format: string
@@ -17,13 +17,43 @@ interface BarcodeDetectorAPI {
 declare global {
   interface Window {
     BarcodeDetector?: {
-      new(options?: { formats: string[] }): BarcodeDetectorAPI
+      new (options?: { formats: string[] }): BarcodeDetectorAPI
       getSupportedFormats?(): Promise<string[]>
     }
   }
 }
 
-type ScannerStatus = "checking" | "unsupported" | "requesting" | "active" | "detected" | "error"
+const BARCODE_FORMATS = ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"]
+
+type ScannerStatus = "starting" | "active" | "detected" | "failed"
+type FailReason = "denied" | "unsupported" | "hardware"
+
+const FAIL_MESSAGES: Record<FailReason, string> = {
+  denied:
+    "Camera access was denied. You can enter the barcode number manually below.",
+  unsupported:
+    "Barcode scanning isn't supported on this browser. Try opening Pantry AI in Chrome or Safari, or enter the barcode manually.",
+  hardware:
+    "We couldn't access your camera. Please check your device settings or enter the barcode manually.",
+}
+
+/**
+ * Returns a BarcodeDetector: native where available (Chrome/Android),
+ * otherwise the zxing-wasm ponyfill (iOS Safari, Firefox).
+ */
+async function getDetector(): Promise<BarcodeDetectorAPI | null> {
+  try {
+    if (window.BarcodeDetector) {
+      return new window.BarcodeDetector({ formats: BARCODE_FORMATS })
+    }
+    const { BarcodeDetector } = await import("barcode-detector/ponyfill")
+    return new BarcodeDetector({
+      formats: BARCODE_FORMATS as never[],
+    }) as unknown as BarcodeDetectorAPI
+  } catch {
+    return null
+  }
+}
 
 interface BarcodeScannerProps {
   onDetect: (barcode: string) => void
@@ -36,54 +66,82 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const detectorRef = useRef<BarcodeDetectorAPI | null>(null)
   const calledRef = useRef(false)
+  const cancelledRef = useRef(false)
 
-  const [status, setStatus] = useState<ScannerStatus>("checking")
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [status, setStatus] = useState<ScannerStatus>("starting")
+  const [failReason, setFailReason] = useState<FailReason>("hardware")
   const [manualCode, setManualCode] = useState("")
   const [showManual, setShowManual] = useState(false)
   const [detectedValue, setDetectedValue] = useState<string | null>(null)
 
   useEffect(() => {
     calledRef.current = false
-    if (!window.BarcodeDetector) {
-      setStatus("unsupported")
-      return
-    }
+    cancelledRef.current = false
 
-    let detector: BarcodeDetectorAPI
-    try {
-      detector = new window.BarcodeDetector({
-        formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
-      })
-      detectorRef.current = detector
-    } catch {
-      setStatus("unsupported")
-      return
-    }
+    async function start() {
+      // 1. Camera first — getUserMedia with rear camera (works on iOS Safari)
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setFailReason("unsupported")
+        setStatus("failed")
+        return
+      }
 
-    setStatus("requesting")
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } })
-      .then((stream) => {
-        streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          videoRef.current.play().then(() => {
-            setStatus("active")
-            scheduleScan()
-          })
+      let stream: MediaStream
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        })
+      } catch (err) {
+        const name = err instanceof DOMException ? err.name : ""
+        setFailReason(name === "NotAllowedError" || name === "SecurityError" ? "denied" : "hardware")
+        setStatus("failed")
+        return
+      }
+
+      if (cancelledRef.current) {
+        stream.getTracks().forEach((t) => t.stop())
+        return
+      }
+      streamRef.current = stream
+
+      const video = videoRef.current
+      if (video) {
+        video.srcObject = stream
+        // iOS Safari requires playsinline + muted to autoplay inline
+        video.setAttribute("playsinline", "true")
+        video.muted = true
+        try {
+          await video.play()
+        } catch {
+          // play() can be interrupted on unmount — ignore
         }
-      })
-      .catch((err: Error) => {
-        setStatus("error")
-        setErrorMsg(
-          err.name === "NotAllowedError"
-            ? "Camera permission denied. Allow camera access or enter the barcode manually."
-            : "Could not access camera. Enter the barcode manually."
-        )
-      })
+      }
 
-    return () => stopCamera()
+      // 2. Detector — native or ponyfill
+      const detector = await getDetector()
+      if (cancelledRef.current) return
+      if (!detector) {
+        stopCamera()
+        setFailReason("unsupported")
+        setStatus("failed")
+        return
+      }
+      detectorRef.current = detector
+      setStatus("active")
+      scheduleScan()
+    }
+
+    start()
+    return () => {
+      cancelledRef.current = true
+      stopCamera()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function stopCamera() {
@@ -97,7 +155,7 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
   }
 
   async function runScan() {
-    if (calledRef.current || !detectorRef.current || !videoRef.current) return
+    if (cancelledRef.current || calledRef.current || !detectorRef.current || !videoRef.current) return
     if (videoRef.current.readyState < 2) {
       scheduleScan()
       return
@@ -122,14 +180,14 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
 
   function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const code = manualCode.trim()
-    if (!code) return
+    const code = manualCode.trim().replace(/\D/g, "")
+    if (!code || code.length > 20) return
     stopCamera()
     onDetect(code)
   }
 
-  // ── Unsupported / Error ──────────────────────────────────────────────────
-  if (status === "unsupported" || status === "error") {
+  // ── Failed: denied / unsupported / hardware — inline message + manual entry ─
+  if (status === "failed") {
     return (
       <div className="flex flex-col items-center gap-6 py-6">
         <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center">
@@ -137,13 +195,13 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
         </div>
         <div className="text-center space-y-1 px-4">
           <p className="font-semibold text-sm">
-            {status === "unsupported" ? "Scanner not supported" : "Camera unavailable"}
+            {failReason === "unsupported"
+              ? "Scanner not supported"
+              : failReason === "denied"
+              ? "Camera access denied"
+              : "Camera unavailable"}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {status === "unsupported"
-              ? "Your browser doesn't support the Barcode API. Enter the UPC/barcode number manually."
-              : errorMsg}
-          </p>
+          <p className="text-xs text-muted-foreground">{FAIL_MESSAGES[failReason]}</p>
         </div>
         <form onSubmit={handleManualSubmit} className="w-full max-w-xs space-y-3 px-4">
           <div className="space-y-1.5">
@@ -154,6 +212,7 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
               inputMode="numeric"
+              maxLength={20}
               autoFocus
             />
           </div>
@@ -168,8 +227,8 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
     )
   }
 
-  // ── Requesting / Loading ─────────────────────────────────────────────────
-  if (status === "requesting" || status === "checking") {
+  // ── Starting camera ──────────────────────────────────────────────────────
+  if (status === "starting") {
     return (
       <div className="flex flex-col items-center gap-4 py-12">
         <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -191,6 +250,7 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
           className="absolute inset-0 w-full h-full object-cover"
           playsInline
           muted
+          autoPlay
         />
 
         {/* Scanning frame overlay */}
@@ -257,6 +317,7 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
             inputMode="numeric"
+            maxLength={20}
             className="flex-1"
             autoFocus
           />
