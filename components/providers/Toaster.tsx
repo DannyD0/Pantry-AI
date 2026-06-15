@@ -41,7 +41,8 @@ export function Toaster({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastContext.Provider value={{ toast }}>
-      <ToastProvider swipeDirection="down">
+      {/* All toasts (success, info, error, auto-add) auto-dismiss after 3s */}
+      <ToastProvider swipeDirection="down" duration={3000}>
         {children}
         {toasts.map((t) => (
           <Toast

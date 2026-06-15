@@ -1,7 +1,7 @@
 # Pantry-AI
 # Your own personal AI pantry manager
 
-A full-stack pantry inventory management app powered by AI — designed to help households track what they have, predict when they'll run out, and reduce food waste.
+A full-stack pantry inventory management app powered by AI, designed to help households track what they have, predict when they'll run out, and reduce food waste.
 
 
 ## What It Does
@@ -20,11 +20,11 @@ Pantry AI lets you build and manage a personal grocery inventory by scanning ite
 
 This project was a product design and architecture initiative. My contributions:
 
-- **Product conception** — defined the problem, user journey, and core feature set
-- **Architecture decisions** — selected the tech stack, designed the data model, and scoped each sprint
-- **Prompt engineering** — designed and iterated on the prompts used to instruct the Claude Vision API for accurate item identification and handling of edge cases (obscured labels, ambiguous packaging, low-light photos)
-- **Failure mode design** — thought through how the app should behave when the model is uncertain, and designed fallback logic to handle misidentification gracefully
-- **Sprint planning** — structured the project into five development sprints from MVP through local deployment
+- **Product conception**: defined the problem, user journey, and core feature set
+- **Architecture decisions**: selected the tech stack, designed the data model, and scoped each sprint
+- **Prompt engineering**: designed and iterated on the prompts used to instruct the Claude Vision API for accurate item identification and handling of edge cases (obscured labels, ambiguous packaging, low-light photos)
+- **Failure mode design**: thought through how the app should behave when the model is uncertain, and designed fallback logic to handle misidentification gracefully
+- **Sprint planning**: structured the project into five development sprints from MVP through local deployment
 
 The implementation was built with AI-assisted development tools. My focus was on the product thinking, prompt strategy, and responsible AI design decisions that shaped how the system behaves.
 
@@ -57,7 +57,7 @@ Chose Supabase over a simpler solution because the real-time database capabiliti
 ## What I Learned so Far
 
 - Prompt engineering is as much about failure handling as it is about happy path performance
-- The hardest part of building an AI-powered product is not the model — it is deciding when to trust it and when to ask the human
+- The hardest part of building an AI-powered product is not the model, it is deciding when to trust it and when to ask the human
 - Architecture decisions made early (data model design, API structure) have an outsized impact on how fast you can iterate later
 - Responsible AI use in a consumer product means designing for the cases where the model is wrong, not just the cases where it is right
 

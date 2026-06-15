@@ -107,6 +107,58 @@ export function useInventory(userId: string) {
     return { success: true }
   }
 
+  // Edit an existing item's details (name, brand, category, weight, unit,
+  // frequency, expiry). Preserves consumed stock: current_weight is kept,
+  // only clamped if the new original weight is smaller.
+  const updateItem = async (
+    itemId: string,
+    payload: Omit<
+      InventoryItem,
+      | "id"
+      | "user_id"
+      | "last_updated"
+      | "predicted_empty_date"
+      | "consumption_velocity_per_day"
+      | "historical_lifespans"
+      | "tracking_state"
+      | "priority_tier"
+      | "last_purchased_timestamp"
+      | "volume_multiplier"
+    >
+  ) => {
+    const item = items.find((i) => i.id === itemId)
+    if (!item) return { error: "Item not found" }
+
+    const current_weight =
+      item.tracking_state === "EMPTY" ? 0 : Math.min(item.current_weight, payload.original_weight)
+
+    const predicted_empty_date =
+      item.tracking_state === "ACTIVE"
+        ? bestPredictedDate({ ...item, ...payload, current_weight })
+        : item.predicted_empty_date
+
+    const { error: err } = await supabase
+      .from("inventory")
+      .update({
+        item_name: payload.item_name,
+        brand: payload.brand,
+        category: payload.category,
+        original_weight: payload.original_weight,
+        current_weight,
+        unit: payload.unit,
+        usage_frequency: payload.usage_frequency,
+        barcode: payload.barcode,
+        expiry_date: payload.expiry_date,
+        predicted_empty_date,
+        last_updated: new Date().toISOString(),
+      })
+      .eq("id", itemId)
+
+    if (err) return { error: err.message }
+    await fetchItems()
+    return { success: true }
+  }
+
   const updateWeight = async (itemId: string, newCurrentWeight: number) => {
     const item = items.find((i) => i.id === itemId)
     if (!item) return { error: "Item not found" }
@@ -252,6 +304,7 @@ export function useInventory(userId: string) {
     loading,
     error,
     addItem,
+    updateItem,
     updateWeight,
     confirmEmpty,
     confirmStillHave,

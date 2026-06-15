@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "—"
+  if (!dateStr) return "-"
   const date = new Date(dateStr)
   const today = new Date()
   const diffDays = Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))

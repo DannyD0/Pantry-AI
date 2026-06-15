@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { CircleUserRound } from "lucide-react"
 
-/** Top-right profile button shown on every screen — opens the Settings page. */
+/** Top-right profile button shown on every screen: opens the Settings page. */
 export function ProfileButton({ className = "" }: { className?: string }) {
   return (
     <Link

@@ -14,11 +14,14 @@ import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { isValidDateString, isValidWeight, sanitizeText } from "@/lib/logic/validate"
+import { UNIT_GROUPS, normalizeUnit } from "@/lib/logic/units"
+import { isValidDateString, isValidQuantity, isValidWeight, sanitizeText } from "@/lib/logic/validate"
 import type { Category, UsageFrequency, InventoryItem } from "@/lib/supabase/types"
 
 export type AddItemPayload = Omit<
@@ -33,7 +36,10 @@ export type AddItemPayload = Omit<
   | "priority_tier"
   | "last_purchased_timestamp"
   | "volume_multiplier"
->
+> & {
+  /** Only present when the form is shown with showQuantity (shopping list). */
+  quantity?: number
+}
 
 export interface AddItemPrefill {
   item_name?: string
@@ -41,8 +47,10 @@ export interface AddItemPrefill {
   category?: Category | ""
   original_weight?: string
   unit?: string
+  usage_frequency?: UsageFrequency | ""
   barcode?: string
   expiry_date?: string
+  quantity?: string
 }
 
 interface AddItemDialogProps {
@@ -52,6 +60,12 @@ interface AddItemDialogProps {
   prefill?: AddItemPrefill
   /** Informational banner shown above the form (e.g. lookup fallback messages). */
   notice?: string
+  /** "edit" switches copy to Edit Item / Save Changes; the save action is whatever onAdd does. */
+  mode?: "create" | "edit"
+  /** Show a quantity field (how many units being bought), used by the shopping list. */
+  showQuantity?: boolean
+  /** Override the success toast/title wording, e.g. "Add to List". */
+  title?: string
 }
 
 const CATEGORIES: Category[] = ["Protein", "Vegetable", "Grain", "Dairy", "Essential", "Other"]
@@ -70,9 +84,19 @@ const EMPTY_FORM = {
   usage_frequency: "" as UsageFrequency | "",
   barcode: "",
   expiry_date: "",
+  quantity: "1",
 }
 
-export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: AddItemDialogProps) {
+export function AddItemDialog({
+  open,
+  onOpenChange,
+  onAdd,
+  prefill,
+  notice,
+  mode = "create",
+  showQuantity = false,
+  title,
+}: AddItemDialogProps) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,10 +104,10 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: Ad
   // Apply prefill whenever dialog opens with new prefill data
   useEffect(() => {
     if (open) {
-      setForm({
-        ...EMPTY_FORM,
-        ...(prefill ?? {}),
-      })
+      const merged = { ...EMPTY_FORM, ...(prefill ?? {}) }
+      // Snap free-form units (barcode/vision results) to a dropdown value
+      merged.unit = normalizeUnit(merged.unit) ?? "oz"
+      setForm(merged)
       setError(null)
     }
   }, [open, prefill])
@@ -104,6 +128,12 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: Ad
     if (form.expiry_date && !isValidDateString(form.expiry_date))
       return setError("Enter a valid expiry date.")
 
+    let quantity: number | undefined
+    if (showQuantity) {
+      quantity = parseInt(form.quantity, 10) || 1
+      if (!isValidQuantity(quantity)) return setError("Quantity must be between 1 and 99.")
+    }
+
     setSaving(true)
     setError(null)
 
@@ -113,11 +143,12 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: Ad
       category: (form.category as Category) || null,
       original_weight: originalWeight,
       current_weight: originalWeight,
-      unit: sanitizeText(form.unit, 12) || "oz",
+      unit: form.unit || "oz",
       usage_frequency: (form.usage_frequency as UsageFrequency) || null,
       barcode: sanitizeText(form.barcode, 20) || null,
       image_url: null,
       expiry_date: form.expiry_date || null,
+      ...(quantity !== undefined ? { quantity } : {}),
     }
 
     const result = await onAdd(payload)
@@ -129,11 +160,15 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: Ad
     }
   }
 
+  const heading = title ?? (mode === "edit" ? "Edit Item" : "Add Item")
+  const submitLabel = mode === "edit" ? "Save Changes" : "Add Item"
+  const savingLabel = mode === "edit" ? "Saving…" : "Adding…"
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="bg-card border-border max-w-sm w-[calc(100vw-2rem)] max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Item</DialogTitle>
+          <DialogTitle>{heading}</DialogTitle>
         </DialogHeader>
 
         {notice && (
@@ -153,6 +188,7 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: Ad
               placeholder="e.g. Chicken Breast"
               value={form.item_name}
               onChange={(e) => setForm((f) => ({ ...f, item_name: e.target.value }))}
+              maxLength={120}
               autoComplete="off"
             />
           </div>
@@ -165,6 +201,7 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: Ad
               placeholder="e.g. Trader Joe's"
               value={form.brand}
               onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))}
+              maxLength={120}
               autoComplete="off"
             />
           </div>
@@ -205,15 +242,47 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: Ad
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="unit" className="text-xs text-muted-foreground">Unit</Label>
-              <Input
-                id="unit"
-                placeholder="oz"
+              <Label className="text-xs text-muted-foreground">Unit</Label>
+              <Select
                 value={form.unit}
-                onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
-              />
+                onValueChange={(v) => setForm((f) => ({ ...f, unit: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {UNIT_GROUPS.map((group) => (
+                    <SelectGroup key={group.label}>
+                      <SelectLabel className="text-xs text-muted-foreground">
+                        {group.label}
+                      </SelectLabel>
+                      {group.units.map((u) => (
+                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
+
+          {/* Quantity (shopping list variant) */}
+          {showQuantity && (
+            <div className="space-y-1.5">
+              <Label htmlFor="quantity" className="text-xs text-muted-foreground">
+                Quantity <span className="text-muted-foreground/60">(how many units)</span>
+              </Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                max="99"
+                value={form.quantity}
+                onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+                inputMode="numeric"
+              />
+            </div>
+          )}
 
           {/* Usage Frequency */}
           <div className="space-y-1.5">
@@ -260,7 +329,7 @@ export function AddItemDialog({ open, onOpenChange, onAdd, prefill, notice }: Ad
               Cancel
             </Button>
             <Button type="submit" size="sm" disabled={saving}>
-              {saving ? "Adding…" : "Add Item"}
+              {saving ? savingLabel : submitLabel}
             </Button>
           </DialogFooter>
         </form>

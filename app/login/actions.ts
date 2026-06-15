@@ -20,7 +20,7 @@ export async function signInWithPassword(email: string, password: string) {
     if (error) return { error: error.message }
     redirect("/")
   } catch (err: unknown) {
-    // redirect() throws — rethrow it
+    // redirect() throws, rethrow it
     if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err
     return { error: err instanceof Error ? err.message : "Something went wrong." }
   }
@@ -42,7 +42,7 @@ export async function signUpWithPassword(email: string, password: string, name: 
       },
     })
     if (error) return { error: error.message }
-    return { success: true, needsConfirmation: true }
+    return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Something went wrong." }
   }

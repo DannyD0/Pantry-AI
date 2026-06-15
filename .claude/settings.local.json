@@ -1,7 +1,22 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd \"C:\\\\Users\\\\CAT 19\\\\Documents\\\\GroceryProject\" && npm run dev)"
+      "Bash(cd \"C:\\\\Users\\\\CAT 19\\\\Documents\\\\GroceryProject\" && npm run dev)",
+      "Bash(npm run:*)",
+      "Bash(find 'C:/Users/CAT 19/Documents/GroceryProject/node_modules/@supabase/supabase-js' -name *.d.ts)",
+      "Bash(grep '\"\"version\"\"' \"C:/Users/CAT 19/Documents/GroceryProject/node_modules/@supabase/supabase-js/package.json\")",
+      "Bash(grep '\"\"version\"\"' \"C:/Users/CAT 19/Documents/GroceryProject/node_modules/@supabase/postgrest-js/package.json\")",
+      "Bash(grep '\"\"version\"\"' \"C:/Users/CAT 19/Documents/GroceryProject/node_modules/@supabase/ssr/package.json\")",
+      "Bash(npm view:*)",
+      "Bash(npm install:*)",
+      "Bash(vercel env:*)",
+      "Bash(start:*)",
+      "Bash(vercel logs:*)",
+      "Bash(cd:*)",
+      "Bash(grep -r \"Garamola\\\\|Grocery Guru\\\\|garamola\\\\|garamolas\" --include=\"*.{ts,tsx,json}\" .)",
+      "Bash(vercel alias:*)",
+      "Bash(node -e \"require\\(''sharp''\\); console.log\\(''sharp ok''\\)\")",
+      "Bash(npx tsc *)"
     ]
   }
 }

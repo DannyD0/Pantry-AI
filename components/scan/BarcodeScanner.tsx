@@ -79,7 +79,7 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
     cancelledRef.current = false
 
     async function start() {
-      // 1. Camera first — getUserMedia with rear camera (works on iOS Safari)
+      // 1. Camera first: getUserMedia with rear camera (works on iOS Safari)
       if (!navigator.mediaDevices?.getUserMedia) {
         setFailReason("unsupported")
         setStatus("failed")
@@ -118,11 +118,11 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
         try {
           await video.play()
         } catch {
-          // play() can be interrupted on unmount — ignore
+          // play() can be interrupted on unmount, ignore
         }
       }
 
-      // 2. Detector — native or ponyfill
+      // 2. Detector: native or ponyfill
       const detector = await getDetector()
       if (cancelledRef.current) return
       if (!detector) {
@@ -186,7 +186,7 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
     onDetect(code)
   }
 
-  // ── Failed: denied / unsupported / hardware — inline message + manual entry ─
+  // ── Failed: denied / unsupported / hardware, inline message + manual entry ──
   if (status === "failed") {
     return (
       <div className="flex flex-col items-center gap-6 py-6">

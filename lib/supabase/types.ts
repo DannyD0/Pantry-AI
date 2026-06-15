@@ -24,7 +24,7 @@ export type InventoryItem = {
   image_url: string | null
   // Sprint 7
   expiry_date: string | null
-  // Sprint 6 — automated prediction engine
+  // Sprint 6: automated prediction engine
   consumption_velocity_per_day: number | null
   historical_lifespans: HistoricalLifespan[] | null
   tracking_state: TrackingState
@@ -41,10 +41,14 @@ export type ShoppingListItem = {
   added_at: string
   is_purchased: boolean
   auto_added: boolean
-  // Sprint 8 — details used for smart-match restock
+  // Sprint 8: details used for smart-match restock
   weight_per_unit: number | null
   unit: string | null
   category: Category | null
+  // Sprint 9: full pantry fields captured at list time
+  brand: string | null
+  usage_frequency: UsageFrequency | null
+  expiry_date: string | null
 }
 
 export type Database = {
@@ -78,12 +82,18 @@ export type Database = {
       }
       shopping_list: {
         Row: ShoppingListItem
-        Insert: Omit<ShoppingListItem, "id" | "added_at" | "weight_per_unit" | "unit" | "category"> & {
+        Insert: Omit<
+          ShoppingListItem,
+          "id" | "added_at" | "weight_per_unit" | "unit" | "category" | "brand" | "usage_frequency" | "expiry_date"
+        > & {
           id?: string
           added_at?: string
           weight_per_unit?: number | null
           unit?: string | null
           category?: Category | null
+          brand?: string | null
+          usage_frequency?: UsageFrequency | null
+          expiry_date?: string | null
         }
         Update: Partial<Omit<ShoppingListItem, "id" | "user_id">>
         Relationships: []

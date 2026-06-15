@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import { createServerClient } from "@/lib/supabase/server"
 
-// ANTHROPIC_API_KEY is intentionally NOT prefixed with NEXT_PUBLIC_ —
-// it only exists server-side, inside this route handler.
+// ANTHROPIC_API_KEY is intentionally NOT prefixed with NEXT_PUBLIC_,
+// so it only exists server-side, inside this route handler.
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })

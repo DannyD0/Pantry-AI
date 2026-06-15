@@ -9,9 +9,9 @@ import { LogOut, User, Ruler, Bell } from "lucide-react"
 import type { UnitPref } from "@/hooks/usePreferences"
 
 const UNITS: { value: UnitPref; label: string }[] = [
-  { value: "oz", label: "oz — ounces" },
-  { value: "g", label: "g — grams" },
-  { value: "lbs", label: "lbs — pounds" },
+  { value: "oz", label: "oz - ounces" },
+  { value: "g", label: "g - grams" },
+  { value: "lbs", label: "lbs - pounds" },
 ]
 
 interface SettingsViewProps {

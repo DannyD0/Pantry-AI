@@ -1,4 +1,4 @@
-// Shared input validation helpers — used on both client forms and server actions.
+// Shared input validation helpers, used on both client forms and server actions.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 

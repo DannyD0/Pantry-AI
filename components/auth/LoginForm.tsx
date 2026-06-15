@@ -17,7 +17,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("")
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
+  const [signingIn, setSigningIn] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   function switchMode(next: AuthMode) {
@@ -44,31 +44,33 @@ export function LoginForm() {
 
     if (mode === "signin") {
       const result = await signInWithPassword(email, password)
-      // If we get here, redirect didn't fire — must be an error
+      // If we get here, redirect didn't fire, so it must be an error
       if (result?.error) setError(result.error)
     } else {
       const result = await signUpWithPassword(email, password, name.trim())
-      if (result?.error) setError(result.error)
-      else if (result?.needsConfirmation) setConfirmed(true)
+      if (result?.error) {
+        setError(result.error)
+      } else {
+        // Account created: sign the new user straight in (redirects on success)
+        setSigningIn(true)
+        const signin = await signInWithPassword(email, password)
+        if (signin?.error) {
+          setSigningIn(false)
+          setError(
+            "Account created, but automatic sign-in failed. Please sign in with your new credentials."
+          )
+          setMode("signin")
+        }
+      }
     }
     setLoading(false)
   }
 
-  if (confirmed) {
+  if (signingIn) {
     return (
       <div className="rounded-xl border border-border bg-card p-6 text-center space-y-3">
-        <div className="text-2xl">✉️</div>
-        <p className="font-semibold">Confirm your email</p>
-        <p className="text-sm text-muted-foreground">
-          We sent a confirmation link to{" "}
-          <span className="text-foreground font-medium">{email}</span>
-        </p>
-        <button
-          onClick={() => { setConfirmed(false); setMode("signin") }}
-          className="text-xs text-primary underline-offset-2 hover:underline"
-        >
-          Back to sign in
-        </button>
+        <div className="w-8 h-8 mx-auto rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        <p className="font-semibold">Account created! Signing you in...</p>
       </div>
     )
   }

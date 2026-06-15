@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Trash2, Droplets, Clock, ShoppingBag, CalendarClock } from "lucide-react"
+import { Trash2, Droplets, Clock, Pencil, ShoppingBag, CalendarClock } from "lucide-react"
 import { FuelGauge } from "./FuelGauge"
 import { CategoryBadge } from "./CategoryBadge"
 import { UpdateWeightDialog } from "./UpdateWeightDialog"
@@ -30,6 +30,7 @@ interface InventoryCardProps {
   item: InventoryItem
   onUpdateWeight: (itemId: string, newWeight: number) => Promise<{ error?: string; success?: boolean }>
   onDelete: (itemId: string) => Promise<{ error?: string; success?: boolean }>
+  onEdit: (item: InventoryItem) => void
 }
 
 function formatDate(dateStr: string | null): string | null {
@@ -43,7 +44,7 @@ function formatDate(dateStr: string | null): string | null {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-export function InventoryCard({ item, onUpdateWeight, onDelete }: InventoryCardProps) {
+export function InventoryCard({ item, onUpdateWeight, onDelete, onEdit }: InventoryCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const isEmpty = item.tracking_state === "EMPTY"
   const pct = isEmpty ? 0 : getStockPercent(item.current_weight, item.original_weight)
@@ -79,8 +80,18 @@ export function InventoryCard({ item, onUpdateWeight, onDelete }: InventoryCardP
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={() => onEdit(item)}
+                aria-label={`Edit ${item.item_name}`}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-7 w-7 text-muted-foreground hover:text-destructive"
                 onClick={() => onDelete(item.id)}
+                aria-label={`Delete ${item.item_name}`}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>

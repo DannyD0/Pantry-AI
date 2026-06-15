@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Dark mode by default — Linear.app meets Nike Run Club */
+    /* Dark mode by default: Linear.app meets Nike Run Club */
     --background: 0 0% 5%;
     --foreground: 0 0% 95%;
     --card: 0 0% 8%;
@@ -36,11 +36,11 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* Prevent overscroll bounce — feels native */
+    /* Prevent overscroll bounce, feels native */
     overscroll-behavior: none;
   }
 
-  /* Custom scrollbar — minimal, dark */
+  /* Custom scrollbar: minimal, dark */
   ::-webkit-scrollbar {
     width: 4px;
     height: 4px;

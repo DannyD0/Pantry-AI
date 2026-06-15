@@ -17,14 +17,14 @@ export function createServerClient() {
           try {
             cookieStore.set({ name, value, ...options })
           } catch {
-            // Server component — ignore set errors
+            // Server component, ignore set errors
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: "", ...options })
           } catch {
-            // Server component — ignore remove errors
+            // Server component, ignore remove errors
           }
         },
       },

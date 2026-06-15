@@ -5,27 +5,49 @@ import { Plus, Package, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { InventoryCard } from "./InventoryCard"
 import { AddItemFlow } from "./AddItemFlow"
+import { AddItemDialog, type AddItemPayload, type AddItemPrefill } from "./AddItemDialog"
 import { useInventory } from "@/hooks/useInventory"
 import { useToast } from "@/hooks/useToast"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { ProfileButton } from "@/components/layout/ProfileButton"
-import type { AddItemPayload } from "./AddItemDialog"
-import type { Category } from "@/lib/supabase/types"
+import type { Category, InventoryItem } from "@/lib/supabase/types"
 
 const CATEGORY_ORDER: (Category | "All")[] = [
   "All", "Protein", "Vegetable", "Grain", "Dairy", "Essential", "Other",
 ]
 
+function toPrefill(item: InventoryItem): AddItemPrefill {
+  return {
+    item_name: item.item_name,
+    brand: item.brand ?? "",
+    category: item.category ?? "",
+    original_weight: String(item.original_weight),
+    unit: item.unit,
+    usage_frequency: item.usage_frequency ?? "",
+    barcode: item.barcode ?? "",
+    expiry_date: item.expiry_date ?? "",
+  }
+}
+
 export function InventoryView({ userId }: { userId: string }) {
-  const { items, loading, error, addItem, updateWeight, deleteItem } = useInventory(userId)
+  const { items, loading, error, addItem, updateItem, updateWeight, deleteItem } = useInventory(userId)
   const { toast } = useToast()
   const [addOpen, setAddOpen] = useState(false)
+  const [editItem, setEditItem] = useState<InventoryItem | null>(null)
   const [activeFilter, setActiveFilter] = useState<Category | "All">("All")
 
   const handleAdd = async (payload: AddItemPayload) => {
     const result = await addItem(payload)
     if (result.error) toast(`❌ Something went wrong`, "error")
     else toast(`✅ ${payload.item_name} added to pantry`)
+    return result
+  }
+
+  const handleEditSave = async (payload: AddItemPayload) => {
+    if (!editItem) return { error: "No item selected" }
+    const result = await updateItem(editItem.id, payload)
+    if (result.error) toast(`❌ Something went wrong`, "error")
+    else toast(`✅ Item updated`)
     return result
   }
 
@@ -156,11 +178,21 @@ export function InventoryView({ userId }: { userId: string }) {
             item={item}
             onUpdateWeight={handleUpdateWeight}
             onDelete={handleDelete}
+            onEdit={setEditItem}
           />
         ))}
       </main>
 
       <AddItemFlow open={addOpen} onOpenChange={setAddOpen} onAdd={handleAdd} />
+
+      {/* Edit existing item: same form, prefilled, saves via UPDATE */}
+      <AddItemDialog
+        open={!!editItem}
+        onOpenChange={(open) => { if (!open) setEditItem(null) }}
+        onAdd={handleEditSave}
+        prefill={editItem ? toPrefill(editItem) : undefined}
+        mode="edit"
+      />
       <BottomNav />
     </div>
   )

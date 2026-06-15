@@ -18,7 +18,7 @@ import type { Category } from "@/lib/supabase/types"
 type Stage = "choose" | "barcode" | "vision" | "lookup" | "form"
 
 const NOT_FOUND_MSG =
-  "We couldn't find this product. No worries — fill in the details below and we'll save it for next time."
+  "We couldn't find this product. No worries, fill in the details below and we'll save it for next time."
 const TIMEOUT_MSG = "Lookup is taking too long. You can fill in the details manually."
 const ERROR_MSG = "Lookup failed. You can fill in the details manually."
 

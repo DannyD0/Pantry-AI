@@ -66,23 +66,27 @@ export async function restockFromShoppingItem(listItem: ShoppingListItem): Promi
     return { action: "added_stock", itemName: existing.item_name }
   }
 
-  // No match — create a fresh pantry entry from the details entered on the list
+  // No match: create a fresh pantry entry from the details entered on the list
   const weight = listItem.weight_per_unit ? listItem.weight_per_unit * qty : qty
-  const unit = listItem.unit?.trim() || (listItem.weight_per_unit ? "oz" : "ea")
+  const unit = listItem.unit?.trim() || (listItem.weight_per_unit ? "oz" : "count")
+
+  const predicted = listItem.usage_frequency
+    ? calculatePredictedEmptyDate(weight, weight, listItem.usage_frequency)
+    : null
 
   const { error: insertErr } = await supabase.from("inventory").insert({
     user_id: listItem.user_id,
     item_name: name,
-    brand: null,
+    brand: listItem.brand ?? null,
     category: listItem.category ?? null,
     original_weight: weight,
     current_weight: weight,
     unit,
-    usage_frequency: null,
+    usage_frequency: listItem.usage_frequency ?? null,
     barcode: null,
     image_url: null,
-    expiry_date: null,
-    predicted_empty_date: null,
+    expiry_date: listItem.expiry_date ?? null,
+    predicted_empty_date: predicted,
     priority_tier: assignPriorityTier(name, listItem.category ?? null),
     tracking_state: "ACTIVE",
     last_purchased_timestamp: now,

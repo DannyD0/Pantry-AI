@@ -11,71 +11,36 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { AddItemDialog, type AddItemPayload } from "@/components/inventory/AddItemDialog"
 import { useShoppingList } from "@/hooks/useShoppingList"
 import { useToast } from "@/hooks/useToast"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { ProfileButton } from "@/components/layout/ProfileButton"
-import { isValidQuantity, isValidWeight, sanitizeText } from "@/lib/logic/validate"
-import type { Category, ShoppingListItem } from "@/lib/supabase/types"
-
-const CATEGORIES: Category[] = ["Protein", "Vegetable", "Grain", "Dairy", "Essential", "Other"]
-
-const EMPTY_FORM = {
-  item_name: "",
-  quantity: "1",
-  weight_per_unit: "",
-  unit: "oz",
-  category: "" as Category | "",
-}
+import type { ShoppingListItem } from "@/lib/supabase/types"
 
 export function ShoppingView({ userId }: { userId: string }) {
   const { items, pending, purchased, loading, error, addItem, togglePurchased, deleteItem, clearPurchased } =
     useShoppingList(userId)
   const { toast } = useToast()
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [showDetails, setShowDetails] = useState(false)
-  const [adding, setAdding] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
   const [showPurchased, setShowPurchased] = useState(false)
 
-  const handleAdd = async () => {
-    const name = sanitizeText(form.item_name)
-    if (!name) return
-
-    const quantity = parseInt(form.quantity, 10) || 1
-    if (!isValidQuantity(quantity)) {
-      setFormError("Quantity must be between 1 and 99.")
-      return
-    }
-    const weightPerUnit = form.weight_per_unit ? parseFloat(form.weight_per_unit) : null
-    if (weightPerUnit !== null && !isValidWeight(weightPerUnit)) {
-      setFormError("Enter a valid weight per unit.")
-      return
-    }
-
-    setAdding(true)
-    setFormError(null)
+  // Same form as the pantry; quantity is how many units are being bought,
+  // weight is per unit. Both feed smart restock when the item is checked off.
+  const handleAdd = async (payload: AddItemPayload) => {
     const result = await addItem({
-      item_name: name,
-      quantity,
-      weight_per_unit: weightPerUnit,
-      unit: weightPerUnit !== null ? sanitizeText(form.unit, 12) || "oz" : null,
-      category: (form.category as Category) || null,
+      item_name: payload.item_name,
+      quantity: payload.quantity ?? 1,
+      weight_per_unit: payload.original_weight,
+      unit: payload.unit,
+      category: payload.category,
+      brand: payload.brand,
+      usage_frequency: payload.usage_frequency,
+      expiry_date: payload.expiry_date,
     })
     if (result.error) toast(`❌ Something went wrong`, "error")
-    else toast(`🛒 ${name} added to list`)
-    setForm(EMPTY_FORM)
-    setShowDetails(false)
-    setAdding(false)
+    else toast(`🛒 ${payload.item_name} added to list`)
+    return result
   }
 
   const handleToggle = async (id: string, isPurchased: boolean) => {
@@ -125,107 +90,16 @@ export function ShoppingView({ userId }: { userId: string }) {
                 Clear done
               </Button>
             )}
+            <Button size="sm" className="gap-1.5 h-8" onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Add Item
+            </Button>
             <ProfileButton />
           </div>
         </div>
       </header>
 
       <main className="px-4 py-4 pb-nav space-y-6">
-        {/* Add item form */}
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Add an item..."
-              value={form.item_name}
-              onChange={(e) => setForm((f) => ({ ...f, item_name: e.target.value }))}
-              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-              maxLength={120}
-              className="h-10"
-            />
-            <Button
-              onClick={handleAdd}
-              disabled={adding || !form.item_name.trim()}
-              size="sm"
-              className="h-10 px-4 gap-1.5 shrink-0"
-            >
-              <Plus className="h-4 w-4" />
-              Add
-            </Button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowDetails((d) => !d)}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-1"
-          >
-            <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform duration-200 ${showDetails ? "rotate-180" : ""}`}
-            />
-            Details — qty, weight, category
-          </button>
-
-          {showDetails && (
-            <div className="grid grid-cols-3 gap-2 bg-card border border-border rounded-xl p-3">
-              <div className="space-y-1">
-                <Label htmlFor="sl-qty" className="text-[11px] text-muted-foreground">Qty</Label>
-                <Input
-                  id="sl-qty"
-                  type="number"
-                  min="1"
-                  max="99"
-                  value={form.quantity}
-                  onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-                  inputMode="numeric"
-                  className="h-9 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="sl-weight" className="text-[11px] text-muted-foreground">Weight/unit</Label>
-                <Input
-                  id="sl-weight"
-                  type="number"
-                  min="0"
-                  step="any"
-                  placeholder="e.g. 16"
-                  value={form.weight_per_unit}
-                  onChange={(e) => setForm((f) => ({ ...f, weight_per_unit: e.target.value }))}
-                  inputMode="decimal"
-                  className="h-9 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="sl-unit" className="text-[11px] text-muted-foreground">Unit</Label>
-                <Input
-                  id="sl-unit"
-                  placeholder="oz"
-                  value={form.unit}
-                  onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
-                  maxLength={12}
-                  className="h-9 text-sm"
-                />
-              </div>
-              <div className="col-span-3 space-y-1">
-                <Label className="text-[11px] text-muted-foreground">Category</Label>
-                <Select
-                  value={form.category}
-                  onValueChange={(v) => setForm((f) => ({ ...f, category: v as Category }))}
-                >
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-
-          {formError && <p className="text-xs text-destructive px-1">{formError}</p>}
-        </div>
-
         {/* Loading skeleton */}
         {loading && (
           <div className="space-y-2">
@@ -254,9 +128,13 @@ export function ShoppingView({ userId }: { userId: string }) {
                 <div className="space-y-1">
                   <h3 className="font-semibold text-sm">All clear</h3>
                   <p className="text-sm text-muted-foreground max-w-[220px]">
-                    Nothing to buy. Add items above, or let low-stock auto-add them.
+                    Nothing to buy. Tap Add Item, or let low-stock auto-add things.
                   </p>
                 </div>
+                <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Add Item
+                </Button>
               </div>
             ) : (
               <section className="space-y-2">
@@ -303,6 +181,16 @@ export function ShoppingView({ userId }: { userId: string }) {
           </>
         )}
       </main>
+
+      {/* Full pantry form plus quantity, reused from the inventory page */}
+      <AddItemDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onAdd={handleAdd}
+        showQuantity
+        title="Add to List"
+      />
+
       <BottomNav />
     </div>
   )
@@ -323,6 +211,7 @@ function formatDetails(item: ShoppingListItem): string | null {
         : `× ${item.quantity}`
     )
   }
+  if (item.brand) parts.push(item.brand)
   if (item.category) parts.push(item.category)
   return parts.length > 0 ? parts.join(" · ") : null
 }

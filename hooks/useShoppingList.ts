@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { restockFromShoppingItem, type RestockResult } from "@/lib/logic/restock"
-import type { Category, ShoppingListItem } from "@/lib/supabase/types"
+import type { Category, ShoppingListItem, UsageFrequency } from "@/lib/supabase/types"
 
 export interface AddListItemPayload {
   item_name: string
@@ -11,6 +11,9 @@ export interface AddListItemPayload {
   weight_per_unit?: number | null
   unit?: string | null
   category?: Category | null
+  brand?: string | null
+  usage_frequency?: UsageFrequency | null
+  expiry_date?: string | null
 }
 
 export function useShoppingList(userId: string) {
@@ -62,6 +65,9 @@ export function useShoppingList(userId: string) {
       weight_per_unit: payload.weight_per_unit ?? null,
       unit: payload.unit ?? null,
       category: payload.category ?? null,
+      brand: payload.brand ?? null,
+      usage_frequency: payload.usage_frequency ?? null,
+      expiry_date: payload.expiry_date ?? null,
       is_purchased: false,
       auto_added: false,
     })
