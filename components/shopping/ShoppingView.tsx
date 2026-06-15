@@ -7,39 +7,66 @@ import {
   CheckCircle2,
   Circle,
   Trash2,
+  Pencil,
   AlertTriangle,
   ChevronDown,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { AddItemDialog, type AddItemPayload } from "@/components/inventory/AddItemDialog"
-import { useShoppingList } from "@/hooks/useShoppingList"
+import { AddItemDialog, type AddItemPayload, type AddItemPrefill } from "@/components/inventory/AddItemDialog"
+import { useShoppingList, type AddListItemPayload } from "@/hooks/useShoppingList"
 import { useToast } from "@/hooks/useToast"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { ProfileButton } from "@/components/layout/ProfileButton"
 import type { ShoppingListItem } from "@/lib/supabase/types"
 
+// Same form as the pantry; quantity is how many units are being bought,
+// weight is per unit. Both feed smart restock when the item is checked off.
+function toListPayload(payload: AddItemPayload): AddListItemPayload {
+  return {
+    item_name: payload.item_name,
+    quantity: payload.quantity ?? 1,
+    weight_per_unit: payload.original_weight,
+    unit: payload.unit,
+    category: payload.category,
+    brand: payload.brand,
+    usage_frequency: payload.usage_frequency,
+    expiry_date: payload.expiry_date,
+  }
+}
+
+function toPrefill(item: ShoppingListItem): AddItemPrefill {
+  return {
+    item_name: item.item_name,
+    brand: item.brand ?? "",
+    category: item.category ?? "",
+    original_weight: item.weight_per_unit != null ? String(item.weight_per_unit) : "",
+    unit: item.unit ?? "",
+    usage_frequency: item.usage_frequency ?? "",
+    expiry_date: item.expiry_date ?? "",
+    quantity: String(item.quantity),
+  }
+}
+
 export function ShoppingView({ userId }: { userId: string }) {
-  const { items, pending, purchased, loading, error, addItem, togglePurchased, deleteItem, clearPurchased } =
+  const { items, pending, purchased, loading, error, addItem, updateItem, togglePurchased, deleteItem, clearPurchased } =
     useShoppingList(userId)
   const { toast } = useToast()
   const [addOpen, setAddOpen] = useState(false)
+  const [editItem, setEditItem] = useState<ShoppingListItem | null>(null)
   const [showPurchased, setShowPurchased] = useState(false)
 
-  // Same form as the pantry; quantity is how many units are being bought,
-  // weight is per unit. Both feed smart restock when the item is checked off.
   const handleAdd = async (payload: AddItemPayload) => {
-    const result = await addItem({
-      item_name: payload.item_name,
-      quantity: payload.quantity ?? 1,
-      weight_per_unit: payload.original_weight,
-      unit: payload.unit,
-      category: payload.category,
-      brand: payload.brand,
-      usage_frequency: payload.usage_frequency,
-      expiry_date: payload.expiry_date,
-    })
+    const result = await addItem(toListPayload(payload))
     if (result.error) toast(`❌ Something went wrong`, "error")
     else toast(`🛒 ${payload.item_name} added to list`)
+    return result
+  }
+
+  const handleEditSave = async (payload: AddItemPayload) => {
+    if (!editItem) return { error: "No item selected" }
+    const result = await updateItem(editItem.id, toListPayload(payload))
+    if (result.error) toast(`❌ Something went wrong`, "error")
+    else toast(`✅ Item updated`)
     return result
   }
 
@@ -147,6 +174,7 @@ export function ShoppingView({ userId }: { userId: string }) {
                     item={item}
                     onToggle={handleToggle}
                     onDelete={handleDelete}
+                    onEdit={setEditItem}
                   />
                 ))}
               </section>
@@ -174,6 +202,7 @@ export function ShoppingView({ userId }: { userId: string }) {
                       item={item}
                       onToggle={handleToggle}
                       onDelete={handleDelete}
+                      onEdit={setEditItem}
                     />
                   ))}
               </section>
@@ -191,6 +220,16 @@ export function ShoppingView({ userId }: { userId: string }) {
         title="Add to List"
       />
 
+      {/* Edit existing list item: same form, prefilled, saves via UPDATE */}
+      <AddItemDialog
+        open={!!editItem}
+        onOpenChange={(open) => { if (!open) setEditItem(null) }}
+        onAdd={handleEditSave}
+        prefill={editItem ? toPrefill(editItem) : undefined}
+        mode="edit"
+        showQuantity
+      />
+
       <BottomNav />
     </div>
   )
@@ -200,6 +239,7 @@ interface ShoppingItemProps {
   item: ShoppingListItem
   onToggle: (id: string, purchased: boolean) => Promise<{ error?: string; success?: boolean }>
   onDelete: (id: string) => Promise<{ error?: string; success?: boolean }>
+  onEdit: (item: ShoppingListItem) => void
 }
 
 function formatDetails(item: ShoppingListItem): string | null {
@@ -216,7 +256,7 @@ function formatDetails(item: ShoppingListItem): string | null {
   return parts.length > 0 ? parts.join(" · ") : null
 }
 
-function ShoppingItem({ item, onToggle, onDelete }: ShoppingItemProps) {
+function ShoppingItem({ item, onToggle, onDelete, onEdit }: ShoppingItemProps) {
   const [toggling, setToggling] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const details = formatDetails(item)
@@ -264,6 +304,14 @@ function ShoppingItem({ item, onToggle, onDelete }: ShoppingItemProps) {
           <span className="block text-[11px] text-muted-foreground mt-0.5 truncate">{details}</span>
         )}
       </div>
+
+      <button
+        onClick={() => onEdit(item)}
+        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1"
+        aria-label={`Edit ${item.item_name}`}
+      >
+        <Pencil className="h-4 w-4" />
+      </button>
 
       <button
         onClick={handleDelete}

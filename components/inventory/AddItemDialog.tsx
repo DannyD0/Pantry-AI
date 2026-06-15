@@ -253,11 +253,11 @@ export function AddItemDialog({
                 <SelectContent>
                   {UNIT_GROUPS.map((group) => (
                     <SelectGroup key={group.label}>
-                      <SelectLabel className="text-xs text-muted-foreground">
+                      <SelectLabel className="text-xs text-muted-foreground uppercase tracking-wider">
                         {group.label}
                       </SelectLabel>
                       {group.units.map((u) => (
-                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                        <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
                       ))}
                     </SelectGroup>
                   ))}

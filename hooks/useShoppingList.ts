@@ -76,6 +76,26 @@ export function useShoppingList(userId: string) {
     return { success: true }
   }
 
+  const updateItem = async (itemId: string, payload: AddListItemPayload) => {
+    const { error: err } = await supabase
+      .from("shopping_list")
+      .update({
+        item_name: payload.item_name,
+        quantity: payload.quantity ?? 1,
+        weight_per_unit: payload.weight_per_unit ?? null,
+        unit: payload.unit ?? null,
+        category: payload.category ?? null,
+        brand: payload.brand ?? null,
+        usage_frequency: payload.usage_frequency ?? null,
+        expiry_date: payload.expiry_date ?? null,
+      })
+      .eq("id", itemId)
+
+    if (err) return { error: err.message }
+    await fetchItems()
+    return { success: true }
+  }
+
   /**
    * Toggle purchased state. Checking an item off triggers smart-match restock:
    * existing pantry items get stock added on top, unknown items are created.
@@ -124,5 +144,5 @@ export function useShoppingList(userId: string) {
   const pending = items.filter((i) => !i.is_purchased)
   const purchased = items.filter((i) => i.is_purchased)
 
-  return { items, pending, purchased, loading, error, addItem, togglePurchased, deleteItem, clearPurchased, refetch: fetchItems }
+  return { items, pending, purchased, loading, error, addItem, updateItem, togglePurchased, deleteItem, clearPurchased, refetch: fetchItems }
 }

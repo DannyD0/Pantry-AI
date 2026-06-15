@@ -1,11 +1,28 @@
-// Unit options for the Add Item form, grouped for the dropdown.
+// Unit options for the Add/Edit Item forms, grouped for the dropdown.
 
 export const UNIT_GROUPS = [
-  { label: "Solid", units: ["oz", "lbs", "g", "kg", "count"] },
-  { label: "Liquid", units: ["ml", "L", "fl oz", "cups"] },
+  {
+    label: "Solid",
+    units: [
+      { value: "oz", label: "oz — ounces" },
+      { value: "lbs", label: "lbs — pounds" },
+      { value: "g", label: "g — grams" },
+      { value: "kg", label: "kg — kilograms" },
+      { value: "count", label: "count — quantity" },
+    ],
+  },
+  {
+    label: "Liquid",
+    units: [
+      { value: "fl oz", label: "fl oz — fluid ounces" },
+      { value: "cups", label: "cups — cups" },
+      { value: "ml", label: "ml — milliliters" },
+      { value: "L", label: "L — liters" },
+    ],
+  },
 ] as const
 
-export const ALL_UNITS: string[] = UNIT_GROUPS.flatMap((g) => [...g.units])
+export const ALL_UNITS: string[] = UNIT_GROUPS.flatMap((g) => g.units.map((u) => u.value))
 
 const UNIT_ALIASES: Record<string, string> = {
   oz: "oz", ounce: "oz", ounces: "oz",
