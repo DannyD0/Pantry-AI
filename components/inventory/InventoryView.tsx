@@ -9,7 +9,6 @@ import { AddItemDialog, type AddItemPayload, type AddItemPrefill } from "./AddIt
 import { useInventory } from "@/hooks/useInventory"
 import { useToast } from "@/hooks/useToast"
 import { BottomNav } from "@/components/layout/BottomNav"
-import { ProfileButton } from "@/components/layout/ProfileButton"
 import type { Category, InventoryItem } from "@/lib/supabase/types"
 
 const CATEGORY_ORDER: (Category | "All")[] = [
@@ -107,7 +106,6 @@ export function InventoryView({ userId }: { userId: string }) {
               <Plus className="h-4 w-4" />
               Add Item
             </Button>
-            <ProfileButton />
           </div>
         </div>
 

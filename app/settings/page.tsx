@@ -10,5 +10,12 @@ export default async function SettingsPage() {
 
   if (!session) redirect("/login")
 
-  return <SettingsView userEmail={session.user.email ?? ""} />
+  const userName = (session.user.user_metadata?.full_name as string | undefined) ?? ""
+
+  return (
+    <SettingsView
+      userEmail={session.user.email ?? ""}
+      userName={userName}
+    />
+  )
 }

@@ -16,7 +16,6 @@ import { AddItemDialog, type AddItemPayload, type AddItemPrefill } from "@/compo
 import { useShoppingList, type AddListItemPayload } from "@/hooks/useShoppingList"
 import { useToast } from "@/hooks/useToast"
 import { BottomNav } from "@/components/layout/BottomNav"
-import { ProfileButton } from "@/components/layout/ProfileButton"
 import type { ShoppingListItem } from "@/lib/supabase/types"
 
 // Same form as the pantry; quantity is how many units are being bought,
@@ -121,7 +120,6 @@ export function ShoppingView({ userId }: { userId: string }) {
               <Plus className="h-4 w-4" />
               Add Item
             </Button>
-            <ProfileButton />
           </div>
         </div>
       </header>

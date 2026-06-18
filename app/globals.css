@@ -3,8 +3,32 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light theme (default) */
   :root {
-    /* Dark mode by default: Linear.app meets Nike Run Club */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 142 71% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 142 71% 38%;
+    --radius: 0.75rem;
+  }
+
+  /* Dark theme */
+  html.dark {
     --background: 0 0% 5%;
     --foreground: 0 0% 95%;
     --card: 0 0% 8%;
@@ -40,7 +64,7 @@
     overscroll-behavior: none;
   }
 
-  /* Custom scrollbar: minimal, dark */
+  /* Custom scrollbar: minimal */
   ::-webkit-scrollbar {
     width: 4px;
     height: 4px;

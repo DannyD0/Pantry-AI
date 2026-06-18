@@ -3,19 +3,18 @@
 import { useState, useEffect, useCallback } from "react"
 
 export type UnitPref = "oz" | "g" | "lbs"
+export type ThemePref = "system" | "light" | "dark"
 
 export interface Preferences {
   unit: UnitPref
-  notify_high: boolean
-  notify_medium: boolean
-  notify_low: boolean
+  theme: ThemePref
+  notifications_on: boolean
 }
 
 const DEFAULTS: Preferences = {
   unit: "oz",
-  notify_high: true,
-  notify_medium: true,
-  notify_low: false,
+  theme: "light",
+  notifications_on: true,
 }
 
 const KEY = "pantry_prefs"

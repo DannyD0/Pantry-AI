@@ -15,7 +15,6 @@ import { FuelGauge } from "@/components/inventory/FuelGauge"
 import { useInventory } from "@/hooks/useInventory"
 import { useShoppingList } from "@/hooks/useShoppingList"
 import { BottomNav } from "@/components/layout/BottomNav"
-import { ProfileButton } from "@/components/layout/ProfileButton"
 import { getStockPercent } from "@/lib/logic/depletion"
 import { CheckInCard } from "@/components/dashboard/CheckInCard"
 
@@ -79,17 +78,17 @@ export function DashboardView({ userId, userName }: { userId: string; userName: 
       <main className="px-4 pb-nav max-w-lg mx-auto">
         {/* Hero header */}
         <div className="pt-14 pb-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-0.5 min-w-0">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
-                Pantry AI
-              </p>
-              <h1 className="text-3xl font-bold tracking-tight truncate">
-                {greeting()}, {userName}
-              </h1>
-              <p className={`text-sm font-semibold mt-1 ${statusColor}`}>{statusMsg}</p>
-            </div>
-            <ProfileButton className="mt-1" />
+          <div className="space-y-0.5 min-w-0">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
+              Pantry AI
+            </p>
+            <h1
+              className="font-bold tracking-tight"
+              style={{ fontSize: "clamp(1.4rem, 6vw, 1.875rem)", lineHeight: 1.15 }}
+            >
+              {greeting()}, {userName}
+            </h1>
+            <p className={`text-sm font-semibold mt-1 ${statusColor}`}>{statusMsg}</p>
           </div>
         </div>
 
@@ -204,17 +203,16 @@ export function DashboardView({ userId, userName }: { userId: string; userName: 
                   : diffDays === 0
                   ? "Expires today"
                   : `${diffDays}d left`
-                const color = isExpired || diffDays === 0 ? "text-red-400 border-red-900/30" : "text-orange-400 border-orange-900/30"
+                const textColor = isExpired || diffDays === 0 ? "text-red-500" : "text-orange-500"
+                const borderColor = isExpired || diffDays === 0 ? "border-red-400/40" : "border-orange-400/40"
                 return (
                   <Link
                     key={item.id}
                     href="/inventory"
-                    className={`flex items-center justify-between bg-card border rounded-xl px-3 py-2.5 active:scale-[0.98] transition-transform ${
-                      isExpired || diffDays === 0 ? "border-red-900/30" : "border-orange-900/30"
-                    }`}
+                    className={`flex items-center justify-between bg-card border rounded-xl px-3 py-2.5 active:scale-[0.98] transition-transform ${borderColor}`}
                   >
                     <span className="text-sm font-medium truncate">{item.item_name}</span>
-                    <span className={`text-xs font-bold shrink-0 ml-2 ${color}`}>{label}</span>
+                    <span className={`text-xs font-bold shrink-0 ml-2 ${textColor}`}>{label}</span>
                   </Link>
                 )
               })}
@@ -249,7 +247,7 @@ export function DashboardView({ userId, userName }: { userId: string; userName: 
                   <Link
                     key={item.id}
                     href="/inventory"
-                    className="flex items-center gap-3 bg-card border border-red-900/30 rounded-xl px-3 py-2.5 active:scale-[0.98] transition-transform"
+                    className="flex items-center gap-3 bg-card border border-red-400/40 rounded-xl px-3 py-2.5 active:scale-[0.98] transition-transform"
                   >
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
@@ -272,9 +270,9 @@ export function DashboardView({ userId, userName }: { userId: string; userName: 
 
         {/* All-good state */}
         {allGood && (
-          <div className="mb-6 flex items-center gap-3 bg-green-950/40 border border-green-900/40 rounded-2xl px-4 py-3">
-            <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
-            <p className="text-sm text-green-300 font-medium">
+          <div className="mb-6 flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-2xl px-4 py-3">
+            <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+            <p className="text-sm text-primary font-medium">
               All items well-stocked. Nothing to worry about.
             </p>
           </div>

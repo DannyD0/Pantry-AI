@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { Toaster } from "@/components/providers/Toaster"
+import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -34,9 +35,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
+      <head>
+        {/* Inline script prevents flash of wrong theme before React hydration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=JSON.parse(localStorage.getItem('pantry_prefs')||'{}');var t=p.theme||'light';var h=document.documentElement;if(t==='dark'){h.classList.add('dark');}else if(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches){h.classList.add('dark');}else{h.classList.add('light');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className={inter.className}>
-        <Toaster>{children}</Toaster>
+        <ThemeProvider>
+          <Toaster>{children}</Toaster>
+        </ThemeProvider>
       </body>
     </html>
   )
