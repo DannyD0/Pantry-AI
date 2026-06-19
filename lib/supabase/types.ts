@@ -55,7 +55,7 @@ export type Database = {
   public: {
     Tables: {
       inventory: {
-        Row: InventoryItem
+        Row: InventoryItem & Record<string, unknown>
         Insert: Omit<
           InventoryItem,
           | "id"
@@ -76,12 +76,12 @@ export type Database = {
           consumption_velocity_per_day?: number | null
           last_purchased_timestamp?: string | null
           volume_multiplier?: number
-        }
-        Update: Partial<Omit<InventoryItem, "id" | "user_id">>
+        } & Record<string, unknown>
+        Update: Partial<Omit<InventoryItem, "id" | "user_id">> & Record<string, unknown>
         Relationships: []
       }
       shopping_list: {
-        Row: ShoppingListItem
+        Row: ShoppingListItem & Record<string, unknown>
         Insert: Omit<
           ShoppingListItem,
           "id" | "added_at" | "weight_per_unit" | "unit" | "category" | "brand" | "usage_frequency" | "expiry_date"
@@ -94,14 +94,14 @@ export type Database = {
           brand?: string | null
           usage_frequency?: UsageFrequency | null
           expiry_date?: string | null
-        }
-        Update: Partial<Omit<ShoppingListItem, "id" | "user_id">>
+        } & Record<string, unknown>
+        Update: Partial<Omit<ShoppingListItem, "id" | "user_id">> & Record<string, unknown>
         Relationships: []
       }
     }
-    Views: Record<string, never>
-    Functions: Record<string, never>
-    Enums: Record<string, never>
-    CompositeTypes: Record<string, never>
+    Views: Record<never, never>
+    Functions: Record<never, never>
+    Enums: Record<never, never>
+    CompositeTypes: Record<never, never>
   }
 }
