@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
-import { Camera, ImagePlus, X, Loader2, AlertTriangle } from "lucide-react"
+import { Camera, ImagePlus, X, Loader2, AlertTriangle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Category } from "@/lib/supabase/types"
 
@@ -34,6 +34,7 @@ export function VisionUploader({ onIdentify, onCancel }: VisionUploaderProps) {
   const [status, setStatus] = useState<UploadStatus>("idle")
   const [preview, setPreview] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [isRateLimit, setIsRateLimit] = useState(false)
   const [msgIndex, setMsgIndex] = useState(0)
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export function VisionUploader({ onIdentify, onCancel }: VisionUploaderProps) {
 
       if (!res.ok || data.error) {
         setStatus("error")
+        setIsRateLimit(res.status === 429)
         setErrorMsg(data.error ?? "Vision analysis failed. Try again or add manually.")
         return
       }
@@ -92,6 +94,7 @@ export function VisionUploader({ onIdentify, onCancel }: VisionUploaderProps) {
     setStatus("idle")
     setPreview(null)
     setErrorMsg(null)
+    setIsRateLimit(false)
   }
 
   // ── Loading state ────────────────────────────────────────────────────────
@@ -130,10 +133,17 @@ export function VisionUploader({ onIdentify, onCancel }: VisionUploaderProps) {
             <img src={preview} alt="Failed" className="w-full h-full object-cover" />
           </div>
         )}
-        <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-lg p-3 max-w-xs">
-          <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-          <span className="text-destructive text-xs">{errorMsg}</span>
-        </div>
+        {isRateLimit ? (
+          <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 max-w-xs">
+            <Clock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+            <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">{errorMsg}</span>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/20 rounded-lg p-3 max-w-xs">
+            <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+            <span className="text-destructive text-xs">{errorMsg}</span>
+          </div>
+        )}
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={reset}>
             Try Again

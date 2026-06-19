@@ -15,16 +15,18 @@ const RATE_LIMIT = 10
 const WINDOW_MS = 60_000
 const requestLog = new Map<string, number[]>()
 
-function isRateLimited(userId: string): boolean {
+// Returns null if the request is allowed, or the seconds to wait if rate limited.
+function rateLimitCheck(userId: string): number | null {
   const now = Date.now()
   const recent = (requestLog.get(userId) ?? []).filter((t) => now - t < WINDOW_MS)
   if (recent.length >= RATE_LIMIT) {
     requestLog.set(userId, recent)
-    return true
+    const retryAfterMs = WINDOW_MS - (now - recent[0])
+    return Math.ceil(retryAfterMs / 1000)
   }
   recent.push(now)
   requestLog.set(userId, recent)
-  return false
+  return null
 }
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const
@@ -43,10 +45,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Sign in to use AI Vision." }, { status: 401 })
   }
 
-  if (isRateLimited(user.id)) {
+  const retryAfter = rateLimitCheck(user.id)
+  if (retryAfter !== null) {
     return NextResponse.json(
-      { error: "Too many requests. Please wait a minute and try again." },
-      { status: 429 }
+      { error: `Too many requests. Try again in ${retryAfter} seconds.` },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } }
     )
   }
 
