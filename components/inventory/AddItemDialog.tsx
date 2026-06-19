@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { AlertTriangle } from "lucide-react"
 import { UNIT_GROUPS, normalizeUnit } from "@/lib/logic/units"
 import { isValidDateString, isValidQuantity, isValidWeight, sanitizeText } from "@/lib/logic/validate"
 import type { Category, UsageFrequency, InventoryItem } from "@/lib/supabase/types"
@@ -100,6 +101,7 @@ export function AddItemDialog({
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pendingPayload, setPendingPayload] = useState<AddItemPayload | null>(null)
 
   // Apply prefill whenever dialog opens with new prefill data
   useEffect(() => {
@@ -116,8 +118,21 @@ export function AddItemDialog({
     if (!val) {
       setForm(EMPTY_FORM)
       setError(null)
+      setPendingPayload(null)
     }
     onOpenChange(val)
+  }
+
+  async function doSave(payload: AddItemPayload) {
+    setSaving(true)
+    setError(null)
+    const result = await onAdd(payload)
+    setSaving(false)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      handleOpenChange(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -134,9 +149,6 @@ export function AddItemDialog({
       if (!isValidQuantity(quantity)) return setError("Quantity must be between 1 and 99.")
     }
 
-    setSaving(true)
-    setError(null)
-
     const payload: AddItemPayload = {
       item_name: sanitizeText(form.item_name),
       brand: sanitizeText(form.brand) || null,
@@ -151,13 +163,21 @@ export function AddItemDialog({
       ...(quantity !== undefined ? { quantity } : {}),
     }
 
-    const result = await onAdd(payload)
-    setSaving(false)
-    if (result.error) {
-      setError(result.error)
-    } else {
-      handleOpenChange(false)
+    // Guard: if expiry date is before today, ask for confirmation first.
+    if (payload.expiry_date) {
+      const today = new Date()
+      const todayStr = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, "0"),
+        String(today.getDate()).padStart(2, "0"),
+      ].join("-")
+      if (payload.expiry_date < todayStr) {
+        setPendingPayload(payload)
+        return
+      }
     }
+
+    await doSave(payload)
   }
 
   const heading = title ?? (mode === "edit" ? "Edit Item" : "Add Item")
@@ -165,6 +185,7 @@ export function AddItemDialog({
   const savingLabel = mode === "edit" ? "Saving…" : "Adding…"
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="bg-card border-border max-w-sm w-[calc(100vw-2rem)] max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
@@ -335,5 +356,47 @@ export function AddItemDialog({
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Expired-date confirmation dialog */}
+    <Dialog
+      open={pendingPayload !== null}
+      onOpenChange={(v) => { if (!v) setPendingPayload(null) }}
+    >
+      <DialogContent className="bg-card border-border max-w-xs w-[calc(100vw-2rem)]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+            Expired Item
+          </DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          This item appears to be expired. Are you sure you want to add it to your pantry?
+        </p>
+        <DialogFooter className="gap-2 pt-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPendingPayload(null)}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={saving}
+            onClick={async () => {
+              const payload = pendingPayload!
+              setPendingPayload(null)
+              await doSave(payload)
+            }}
+          >
+            {saving ? "Adding…" : "Yes, Add Anyway"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
