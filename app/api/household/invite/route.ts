@@ -1,5 +1,16 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
+
+function adminClient() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) return null
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    serviceKey,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
 
 function generateInviteCode(): string {
   // Unambiguous alphanumeric characters (avoids 0/O, 1/I confusion)
@@ -16,11 +27,23 @@ export async function POST() {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
   }
 
-  const { data: memberRecord } = await supabase
+  console.log("[invite] user.id =", user.id)
+
+  const admin = adminClient()
+  if (!admin) {
+    return NextResponse.json(
+      { error: "Household management requires server configuration. Contact support." },
+      { status: 503 }
+    )
+  }
+
+  const { data: memberRecord, error: memberErr } = await admin
     .from("household_members")
     .select("household_id")
     .eq("user_id", user.id)
     .single()
+
+  console.log("[invite] memberRecord =", memberRecord, "memberErr =", memberErr)
 
   if (!memberRecord?.household_id) {
     return NextResponse.json({ error: "No household found." }, { status: 404 })
