@@ -21,11 +21,14 @@ export async function restockFromShoppingItem(listItem: ShoppingListItem): Promi
   const name = listItem.item_name.trim()
   const qty = Math.max(1, listItem.quantity ?? 1)
 
-  // Case-insensitive exact name match within the user's pantry
+  const scopeFilter = listItem.household_id
+    ? { column: "household_id", value: listItem.household_id }
+    : { column: "user_id", value: listItem.user_id }
+
   const { data: matches, error: findErr } = await supabase
     .from("inventory")
     .select("*")
-    .eq("user_id", listItem.user_id)
+    .eq(scopeFilter.column, scopeFilter.value)
     .ilike("item_name", name)
     .limit(1)
 
@@ -35,7 +38,6 @@ export async function restockFromShoppingItem(listItem: ShoppingListItem): Promi
   const now = new Date().toISOString()
 
   if (existing) {
-    // Add purchased stock on top of whatever is left
     const addedWeight = listItem.weight_per_unit
       ? listItem.weight_per_unit * qty
       : existing.original_weight * qty
@@ -66,7 +68,6 @@ export async function restockFromShoppingItem(listItem: ShoppingListItem): Promi
     return { action: "added_stock", itemName: existing.item_name }
   }
 
-  // No match: create a fresh pantry entry from the details entered on the list
   const weight = listItem.weight_per_unit ? listItem.weight_per_unit * qty : qty
   const unit = listItem.unit?.trim() || (listItem.weight_per_unit ? "oz" : "count")
 
@@ -76,6 +77,7 @@ export async function restockFromShoppingItem(listItem: ShoppingListItem): Promi
 
   const { error: insertErr } = await supabase.from("inventory").insert({
     user_id: listItem.user_id,
+    household_id: listItem.household_id,
     item_name: name,
     brand: listItem.brand ?? null,
     category: listItem.category ?? null,

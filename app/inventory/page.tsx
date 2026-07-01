@@ -8,5 +8,16 @@ export default async function InventoryPage() {
 
   if (!session) redirect("/login")
 
-  return <InventoryView userId={session.user.id} />
+  const { data: memberRecord } = await supabase
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", session.user.id)
+    .single()
+
+  return (
+    <InventoryView
+      userId={session.user.id}
+      householdId={memberRecord?.household_id ?? null}
+    />
+  )
 }

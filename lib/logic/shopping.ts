@@ -8,14 +8,14 @@ import { isLowStock } from "@/lib/logic/depletion"
  */
 export async function triggerShoppingList(item: InventoryItem): Promise<{ autoAdded: boolean }> {
   if (!isLowStock(item.current_weight, item.original_weight)) return { autoAdded: false }
+  if (!item.household_id) return { autoAdded: false }
 
   const supabase = createClient()
 
-  // Check if item already pending in shopping list
   const { data: existing } = await supabase
     .from("shopping_list")
     .select("id")
-    .eq("user_id", item.user_id)
+    .eq("household_id", item.household_id)
     .eq("item_name", item.item_name)
     .eq("is_purchased", false)
     .maybeSingle()
@@ -24,6 +24,7 @@ export async function triggerShoppingList(item: InventoryItem): Promise<{ autoAd
 
   await supabase.from("shopping_list").insert({
     user_id: item.user_id,
+    household_id: item.household_id,
     item_name: item.item_name,
     quantity: 1,
     auto_added: true,

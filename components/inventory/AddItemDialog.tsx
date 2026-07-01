@@ -29,6 +29,7 @@ export type AddItemPayload = Omit<
   InventoryItem,
   | "id"
   | "user_id"
+  | "household_id"
   | "last_updated"
   | "predicted_empty_date"
   | "consumption_velocity_per_day"

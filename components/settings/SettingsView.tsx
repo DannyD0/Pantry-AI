@@ -24,7 +24,9 @@ import {
   Monitor,
   Lock,
   ExternalLink,
+  Users,
 } from "lucide-react"
+import { HouseholdSection } from "@/components/household/HouseholdSection"
 import type { UnitPref, ThemePref } from "@/hooks/usePreferences"
 
 const UNITS: { value: UnitPref; label: string }[] = [
@@ -273,6 +275,12 @@ export function SettingsView({ userEmail, userName }: SettingsViewProps) {
               )}
             </div>
           </div>
+        </section>
+
+        {/* ── Household ───────────────────────────────────────────────────── */}
+        <section className="space-y-3">
+          <SectionHeader icon={Users} label="Household" />
+          <HouseholdSection />
         </section>
 
         {/* ── Preferences ─────────────────────────────────────────────────── */}

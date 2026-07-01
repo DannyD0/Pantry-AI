@@ -23,15 +23,15 @@ function greeting() {
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"
 }
 
-export function DashboardView({ userId, userName }: { userId: string; userName: string }) {
+export function DashboardView({ userId, householdId, userName }: { userId: string; householdId: string | null; userName: string }) {
   const {
     items,
     loading: invLoading,
     confirmEmpty,
     confirmStillHave,
     snoozeCheckIn,
-  } = useInventory(userId)
-  const { pending, loading: listLoading } = useShoppingList(userId)
+  } = useInventory(userId, householdId)
+  const { pending, loading: listLoading } = useShoppingList(userId, householdId)
 
   const loading = invLoading || listLoading
 

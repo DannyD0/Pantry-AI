@@ -12,22 +12,27 @@ import { calculateVelocity } from "@/lib/logic/velocity"
 import { assignPriorityTier } from "@/lib/logic/priority"
 import { triggerShoppingList } from "@/lib/logic/shopping"
 
-export function useInventory(userId: string) {
+export function useInventory(userId: string, householdId: string | null) {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   const fetchItems = useCallback(async () => {
+    if (!householdId) {
+      setItems([])
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
-    // Promote ACTIVE items whose predicted date has arrived to PENDING_VERIFICATION
     const today = new Date().toISOString().split("T")[0]
     await supabase
       .from("inventory")
       .update({ tracking_state: "PENDING_VERIFICATION" as TrackingState })
-      .eq("user_id", userId)
+      .eq("household_id", householdId)
       .eq("tracking_state", "ACTIVE")
       .lte("predicted_empty_date", today)
       .not("predicted_empty_date", "is", null)
@@ -35,7 +40,7 @@ export function useInventory(userId: string) {
     const { data, error: err } = await supabase
       .from("inventory")
       .select("*")
-      .eq("user_id", userId)
+      .eq("household_id", householdId)
       .order("item_name")
 
     if (err) {
@@ -44,13 +49,12 @@ export function useInventory(userId: string) {
       setItems((data as InventoryItem[]) ?? [])
     }
     setLoading(false)
-  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId, householdId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchItems()
   }, [fetchItems])
 
-  // Build the best predicted empty date: velocity-first, frequency-fallback
   function bestPredictedDate(
     item: Pick<InventoryItem, "current_weight" | "original_weight" | "usage_frequency" | "consumption_velocity_per_day" | "historical_lifespans">
   ): string | null {
@@ -75,6 +79,7 @@ export function useInventory(userId: string) {
       InventoryItem,
       | "id"
       | "user_id"
+      | "household_id"
       | "last_updated"
       | "predicted_empty_date"
       | "consumption_velocity_per_day"
@@ -94,6 +99,7 @@ export function useInventory(userId: string) {
     const { error: err } = await supabase.from("inventory").insert({
       ...item,
       user_id: userId,
+      household_id: householdId,
       predicted_empty_date,
       priority_tier,
       tracking_state: "ACTIVE",
@@ -107,15 +113,13 @@ export function useInventory(userId: string) {
     return { success: true }
   }
 
-  // Edit an existing item's details (name, brand, category, weight, unit,
-  // frequency, expiry). Preserves consumed stock: current_weight is kept,
-  // only clamped if the new original weight is smaller.
   const updateItem = async (
     itemId: string,
     payload: Omit<
       InventoryItem,
       | "id"
       | "user_id"
+      | "household_id"
       | "last_updated"
       | "predicted_empty_date"
       | "consumption_velocity_per_day"
@@ -163,7 +167,6 @@ export function useInventory(userId: string) {
     const item = items.find((i) => i.id === itemId)
     if (!item) return { error: "Item not found" }
 
-    // Restocking an empty item: reset to ACTIVE with fresh purchase timestamp
     const isRestocking = item.tracking_state === "EMPTY" && newCurrentWeight > 0
     const newTrackingState: TrackingState = isRestocking
       ? "ACTIVE"
@@ -204,7 +207,6 @@ export function useInventory(userId: string) {
     return { success: true, autoAdded, itemName: item.item_name }
   }
 
-  // User confirmed the item is now empty. timeDeltaDays = how many days ago it ran out.
   const confirmEmpty = async (itemId: string, timeDeltaDays: number) => {
     const item = items.find((i) => i.id === itemId)
     if (!item) return { error: "Item not found" }
@@ -249,7 +251,6 @@ export function useInventory(userId: string) {
     return { success: true }
   }
 
-  // User said the item is not empty yet. remainingFraction is 0.0–1.0.
   const confirmStillHave = async (itemId: string, remainingFraction: number) => {
     const item = items.find((i) => i.id === itemId)
     if (!item) return { error: "Item not found" }
@@ -276,7 +277,6 @@ export function useInventory(userId: string) {
     return { success: true }
   }
 
-  // Snooze a check-in: push predicted date forward 2 days and reset to ACTIVE
   const snoozeCheckIn = async (itemId: string) => {
     const snoozed = new Date()
     snoozed.setDate(snoozed.getDate() + 2)

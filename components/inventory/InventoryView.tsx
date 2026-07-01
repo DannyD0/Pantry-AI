@@ -28,8 +28,8 @@ function toPrefill(item: InventoryItem): AddItemPrefill {
   }
 }
 
-export function InventoryView({ userId }: { userId: string }) {
-  const { items, loading, error, addItem, updateItem, updateWeight, deleteItem } = useInventory(userId)
+export function InventoryView({ userId, householdId }: { userId: string; householdId: string | null }) {
+  const { items, loading, error, addItem, updateItem, updateWeight, deleteItem } = useInventory(userId, householdId)
   const { toast } = useToast()
   const [addOpen, setAddOpen] = useState(false)
   const [editItem, setEditItem] = useState<InventoryItem | null>(null)

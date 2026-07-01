@@ -53,3 +53,17 @@ export async function signOut() {
   await supabase.auth.signOut()
   redirect("/login")
 }
+
+// Signs in without redirecting; used after signup to show the household setup step.
+export async function signInWithPasswordNoRedirect(email: string, password: string) {
+  const invalid = validateCredentials(email, password)
+  if (invalid) return { error: invalid }
+  try {
+    const supabase = createServerClient()
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) return { error: error.message }
+    return { success: true }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Something went wrong." }
+  }
+}

@@ -8,5 +8,16 @@ export default async function ShoppingPage() {
 
   if (!session) redirect("/login")
 
-  return <ShoppingView userId={session.user.id} />
+  const { data: memberRecord } = await supabase
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", session.user.id)
+    .single()
+
+  return (
+    <ShoppingView
+      userId={session.user.id}
+      householdId={memberRecord?.household_id ?? null}
+    />
+  )
 }

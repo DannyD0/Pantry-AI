@@ -5,12 +5,13 @@ export type PriorityTier = "HIGH" | "MEDIUM" | "LOW"
 
 export type HistoricalLifespan = {
   days: number
-  recorded_at: string // ISO timestamp
+  recorded_at: string
 }
 
 export type InventoryItem = {
   id: string
   user_id: string
+  household_id: string | null
   item_name: string
   brand: string | null
   category: Category | null
@@ -22,9 +23,7 @@ export type InventoryItem = {
   predicted_empty_date: string | null
   barcode: string | null
   image_url: string | null
-  // Sprint 7
   expiry_date: string | null
-  // Sprint 6: automated prediction engine
   consumption_velocity_per_day: number | null
   historical_lifespans: HistoricalLifespan[] | null
   tracking_state: TrackingState
@@ -36,20 +35,53 @@ export type InventoryItem = {
 export type ShoppingListItem = {
   id: string
   user_id: string
+  household_id: string | null
   item_name: string
   quantity: number
   added_at: string
   is_purchased: boolean
   auto_added: boolean
-  // Sprint 8: details used for smart-match restock
   weight_per_unit: number | null
   unit: string | null
   category: Category | null
-  // Sprint 9: full pantry fields captured at list time
   brand: string | null
   usage_frequency: UsageFrequency | null
   expiry_date: string | null
 }
+
+// ─── Household types ──────────────────────────────────────────────────────────
+
+export type Household = {
+  id: string
+  created_by: string
+  household_size: number
+  created_at: string
+}
+
+export type HouseholdMember = {
+  id: string
+  household_id: string
+  user_id: string
+  joined_at: string
+}
+
+export type HouseholdInvite = {
+  id: string
+  household_id: string
+  invite_code: string
+  created_by: string
+  invited_email: string | null
+  used_by: string | null
+  expires_at: string
+  created_at: string
+}
+
+export type HouseholdMemberWithProfile = HouseholdMember & {
+  email: string | null
+  full_name: string | null
+}
+
+// ─── Supabase Database type ───────────────────────────────────────────────────
 
 export type Database = {
   public: {
@@ -96,6 +128,34 @@ export type Database = {
           expiry_date?: string | null
         } & Record<string, unknown>
         Update: Partial<Omit<ShoppingListItem, "id" | "user_id">> & Record<string, unknown>
+        Relationships: []
+      }
+      households: {
+        Row: Household & Record<string, unknown>
+        Insert: Omit<Household, "id" | "created_at" | "household_size"> & {
+          id?: string
+          created_at?: string
+          household_size?: number
+        } & Record<string, unknown>
+        Update: Partial<Omit<Household, "id">> & Record<string, unknown>
+        Relationships: []
+      }
+      household_members: {
+        Row: HouseholdMember & Record<string, unknown>
+        Insert: Omit<HouseholdMember, "id" | "joined_at"> & { id?: string; joined_at?: string } & Record<string, unknown>
+        Update: Partial<Omit<HouseholdMember, "id">> & Record<string, unknown>
+        Relationships: []
+      }
+      household_invites: {
+        Row: HouseholdInvite & Record<string, unknown>
+        Insert: Omit<HouseholdInvite, "id" | "created_at" | "expires_at" | "used_by" | "invited_email"> & {
+          id?: string
+          created_at?: string
+          expires_at?: string
+          used_by?: string | null
+          invited_email?: string | null
+        } & Record<string, unknown>
+        Update: Partial<Omit<HouseholdInvite, "id">> & Record<string, unknown>
         Relationships: []
       }
     }

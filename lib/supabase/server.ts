@@ -1,7 +1,12 @@
 import { createServerClient as createSSRClient, type CookieOptions } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 
+// Cast mirrors client.ts: bypasses a type-mapping mismatch in supabase-js v2 where
+// the generic Database type argument causes Schema to resolve as `never` for tables
+// added after the initial type definition. The cast is safe; runtime behavior is
+// unchanged; all auth and query methods remain on the object.
 export function createServerClient() {
   const cookieStore = cookies()
 
@@ -29,5 +34,5 @@ export function createServerClient() {
         },
       },
     }
-  )
+  ) as unknown as SupabaseClient<Database>
 }

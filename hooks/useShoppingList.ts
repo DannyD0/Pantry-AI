@@ -16,19 +16,25 @@ export interface AddListItemPayload {
   expiry_date?: string | null
 }
 
-export function useShoppingList(userId: string) {
+export function useShoppingList(userId: string, householdId: string | null) {
   const [items, setItems] = useState<ShoppingListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   const fetchItems = useCallback(async () => {
+    if (!householdId) {
+      setItems([])
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError(null)
     const { data, error: err } = await supabase
       .from("shopping_list")
       .select("*")
-      .eq("user_id", userId)
+      .eq("household_id", householdId)
       .order("added_at", { ascending: false })
 
     if (err) {
@@ -37,17 +43,23 @@ export function useShoppingList(userId: string) {
       setItems(data ?? [])
     }
     setLoading(false)
-  }, [userId])
+  }, [userId, householdId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchItems()
 
-    // Real-time subscription
+    if (!householdId) return
+
     const channel = supabase
       .channel("shopping_list_changes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "shopping_list", filter: `user_id=eq.${userId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "shopping_list",
+          filter: `household_id=eq.${householdId}`,
+        },
         () => fetchItems()
       )
       .subscribe()
@@ -55,11 +67,12 @@ export function useShoppingList(userId: string) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [fetchItems, userId])
+  }, [fetchItems, householdId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const addItem = async (payload: AddListItemPayload) => {
     const { error: err } = await supabase.from("shopping_list").insert({
       user_id: userId,
+      household_id: householdId,
       item_name: payload.item_name,
       quantity: payload.quantity ?? 1,
       weight_per_unit: payload.weight_per_unit ?? null,
@@ -96,10 +109,6 @@ export function useShoppingList(userId: string) {
     return { success: true }
   }
 
-  /**
-   * Toggle purchased state. Checking an item off triggers smart-match restock:
-   * existing pantry items get stock added on top, unknown items are created.
-   */
   const togglePurchased = async (itemId: string, isPurchased: boolean) => {
     const item = items.find((i) => i.id === itemId)
     const { error: err } = await supabase
@@ -130,10 +139,11 @@ export function useShoppingList(userId: string) {
   }
 
   const clearPurchased = async () => {
+    if (!householdId) return { error: "No household" }
     const { error: err } = await supabase
       .from("shopping_list")
       .delete()
-      .eq("user_id", userId)
+      .eq("household_id", householdId)
       .eq("is_purchased", true)
 
     if (err) return { error: err.message }

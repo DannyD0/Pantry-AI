@@ -15,5 +15,17 @@ export default async function HomePage() {
     session.user.email?.split("@")[0] ||
     "there"
 
-  return <DashboardView userId={session.user.id} userName={userName} />
+  const { data: memberRecord } = await supabase
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", session.user.id)
+    .single()
+
+  return (
+    <DashboardView
+      userId={session.user.id}
+      householdId={memberRecord?.household_id ?? null}
+      userName={userName}
+    />
+  )
 }

@@ -46,9 +46,9 @@ function toPrefill(item: ShoppingListItem): AddItemPrefill {
   }
 }
 
-export function ShoppingView({ userId }: { userId: string }) {
+export function ShoppingView({ userId, householdId }: { userId: string; householdId: string | null }) {
   const { items, pending, purchased, loading, error, addItem, updateItem, togglePurchased, deleteItem, clearPurchased } =
-    useShoppingList(userId)
+    useShoppingList(userId, householdId)
   const { toast } = useToast()
   const [addOpen, setAddOpen] = useState(false)
   const [editItem, setEditItem] = useState<ShoppingListItem | null>(null)
