@@ -27,8 +27,6 @@ export async function POST() {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
   }
 
-  console.log("[invite] user.id =", user.id)
-
   const admin = adminClient()
   if (!admin) {
     return NextResponse.json(
@@ -37,13 +35,11 @@ export async function POST() {
     )
   }
 
-  const { data: memberRecord, error: memberErr } = await admin
+  const { data: memberRecord } = await admin
     .from("household_members")
     .select("household_id")
     .eq("user_id", user.id)
     .single()
-
-  console.log("[invite] memberRecord =", memberRecord, "memberErr =", memberErr)
 
   if (!memberRecord?.household_id) {
     return NextResponse.json({ error: "No household found." }, { status: 404 })
