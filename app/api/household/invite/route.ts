@@ -20,11 +20,6 @@ function generateInviteCode(): string {
 }
 
 export async function POST() {
-  console.log("[invite] env check:", {
-    hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-  })
-
   const supabase = createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -57,7 +52,7 @@ export async function POST() {
   const householdId = memberRecord.household_id
   const inviteCode = generateInviteCode()
 
-  const { error } = await supabase.from("household_invites").insert({
+  const { error } = await admin.from("household_invites").insert({
     household_id: householdId,
     invite_code: inviteCode,
     created_by: user.id,
