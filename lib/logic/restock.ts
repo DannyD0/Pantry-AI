@@ -25,6 +25,16 @@ export async function restockFromShoppingItem(listItem: ShoppingListItem): Promi
     ? { column: "household_id", value: listItem.household_id }
     : { column: "user_id", value: listItem.user_id }
 
+  let householdSize: number | null = null
+  if (listItem.household_id) {
+    const { data: household } = await supabase
+      .from("households")
+      .select("household_size")
+      .eq("id", listItem.household_id)
+      .single()
+    householdSize = household?.household_size ?? null
+  }
+
   const { data: matches, error: findErr } = await supabase
     .from("inventory")
     .select("*")
@@ -49,7 +59,7 @@ export async function restockFromShoppingItem(listItem: ShoppingListItem): Promi
       existing.consumption_velocity_per_day && existing.consumption_velocity_per_day > 0
         ? calculatePredictedEmptyDateFromVelocity(newCurrent, existing.consumption_velocity_per_day)
         : existing.usage_frequency
-        ? calculatePredictedEmptyDate(newCurrent, newOriginal, existing.usage_frequency)
+        ? calculatePredictedEmptyDate(existing.usage_frequency, householdSize)
         : null
 
     const { error: err } = await supabase
@@ -72,7 +82,7 @@ export async function restockFromShoppingItem(listItem: ShoppingListItem): Promi
   const unit = listItem.unit?.trim() || (listItem.weight_per_unit ? "oz" : "count")
 
   const predicted = listItem.usage_frequency
-    ? calculatePredictedEmptyDate(weight, weight, listItem.usage_frequency)
+    ? calculatePredictedEmptyDate(listItem.usage_frequency, householdSize)
     : null
 
   const { error: insertErr } = await supabase.from("inventory").insert({

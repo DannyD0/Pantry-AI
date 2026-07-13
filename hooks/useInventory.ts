@@ -16,6 +16,7 @@ export function useInventory(userId: string, householdId: string | null) {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [householdSize, setHouseholdSize] = useState<number | null>(null)
   const supabase = createClient()
 
   const fetchItems = useCallback(async () => {
@@ -27,6 +28,13 @@ export function useInventory(userId: string, householdId: string | null) {
 
     setLoading(true)
     setError(null)
+
+    const { data: household } = await supabase
+      .from("households")
+      .select("household_size")
+      .eq("id", householdId)
+      .single()
+    setHouseholdSize(household?.household_size ?? null)
 
     const today = new Date().toISOString().split("T")[0]
     await supabase
@@ -65,11 +73,7 @@ export function useInventory(userId: string, householdId: string | null) {
       )
     }
     if (item.usage_frequency) {
-      return calculatePredictedEmptyDate(
-        item.current_weight,
-        item.original_weight,
-        item.usage_frequency
-      )
+      return calculatePredictedEmptyDate(item.usage_frequency, householdSize)
     }
     return null
   }
@@ -91,7 +95,7 @@ export function useInventory(userId: string, householdId: string | null) {
     >
   ) => {
     const predicted_empty_date = item.usage_frequency
-      ? calculatePredictedEmptyDate(item.current_weight, item.original_weight, item.usage_frequency)
+      ? calculatePredictedEmptyDate(item.usage_frequency, householdSize)
       : null
 
     const priority_tier = assignPriorityTier(item.item_name, item.category ?? null)

@@ -1,28 +1,39 @@
 import type { UsageFrequency } from "@/lib/supabase/types"
 
+// D: days between uses
 const DAYS_PER_USE: Record<UsageFrequency, number> = {
   daily: 1,
   thrice_weekly: 2.33,
   weekly: 7,
 }
 
+// F: household-size consumption factor, applied to the cold-start estimate
+// (no velocity history yet). Larger households deplete shared items faster.
+export function getHouseholdFactor(householdSize: number | null | undefined): number {
+  if (!householdSize || householdSize <= 0) return 0.10
+  if (householdSize === 1) return 0.08
+  if (householdSize === 2) return 0.10
+  if (householdSize <= 4) return 0.13
+  return 0.16
+}
+
+// Cold-start estimate: DaysUntilDepletion = D / F. Used only before any real
+// depletion cycle exists for an item (i.e. no consumption_velocity_per_day yet).
 export function calculateDaysRemaining(
-  currentWeight: number,
-  originalWeight: number,
-  usageFrequency: UsageFrequency
+  usageFrequency: UsageFrequency,
+  householdSize: number | null | undefined
 ): number {
-  if (originalWeight <= 0) return 0
-  const ratio = currentWeight / originalWeight
-  return Math.max(0, Math.round(ratio * DAYS_PER_USE[usageFrequency]))
+  const D = DAYS_PER_USE[usageFrequency]
+  const F = getHouseholdFactor(householdSize)
+  return Math.max(0, Math.round(D / F))
 }
 
 // Frequency-based fallback: used when no velocity data exists yet
 export function calculatePredictedEmptyDate(
-  currentWeight: number,
-  originalWeight: number,
-  usageFrequency: UsageFrequency
+  usageFrequency: UsageFrequency,
+  householdSize: number | null | undefined
 ): string {
-  const days = calculateDaysRemaining(currentWeight, originalWeight, usageFrequency)
+  const days = calculateDaysRemaining(usageFrequency, householdSize)
   const date = new Date()
   date.setDate(date.getDate() + days)
   return date.toISOString().split("T")[0]
