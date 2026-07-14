@@ -54,6 +54,8 @@ export function DashboardView({ userId, householdId, userName }: { userId: strin
   const totalItems = activeItems.length
   const pendingCount = pending.length
 
+  const pantryTitle = userName.trim() ? `${userName}'s Pantry` : "My Pantry"
+
   const allGood = !loading && lowStock.length === 0 && pendingVerification.length === 0 && totalItems > 0
   const statusColor =
     pendingVerification.length > 0
@@ -86,8 +88,9 @@ export function DashboardView({ userId, householdId, userName }: { userId: strin
               className="font-bold tracking-tight"
               style={{ fontSize: "clamp(1.4rem, 6vw, 1.875rem)", lineHeight: 1.15 }}
             >
-              {greeting()}, {userName}
+              {pantryTitle}
             </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{greeting()}</p>
             <p className={`text-sm font-semibold mt-1 ${statusColor}`}>{statusMsg}</p>
           </div>
         </div>

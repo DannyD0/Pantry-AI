@@ -13,7 +13,7 @@ export default async function HomePage() {
   const userName =
     (session.user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
     session.user.email?.split("@")[0] ||
-    "there"
+    ""
 
   const { data: memberRecord } = await supabase
     .from("household_members")
