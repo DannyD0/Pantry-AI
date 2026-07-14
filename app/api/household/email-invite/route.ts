@@ -67,12 +67,12 @@ export async function POST(request: NextRequest) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `Pantry AI <${fromEmail}>`,
+      from: `Mento <${fromEmail}>`,
       to: [email],
-      subject: `${senderName} invited you to join their household on Pantry AI`,
+      subject: `${senderName} invited you to join their household on Mento`,
       html: `
         <p>Hi there!</p>
-        <p><strong>${senderName}</strong> has invited you to share their pantry on <strong>Pantry AI</strong>.</p>
+        <p><strong>${senderName}</strong> has invited you to share their pantry on <strong>Mento</strong>.</p>
         <p>Click the link below to join their household:</p>
         <p><a href="${inviteLink}" style="background:#16a34a;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600;">Join Household</a></p>
         <p>Or enter this code manually in the app: <strong style="font-size:20px;letter-spacing:2px;">${inviteCode}</strong></p>

@@ -150,7 +150,7 @@ export function SettingsView({ userEmail, userName }: SettingsViewProps) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `pantry-ai-export-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `mento-export-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
     toast("✅ Data exported")
@@ -453,7 +453,7 @@ export function SettingsView({ userEmail, userName }: SettingsViewProps) {
           </form>
         </section>
 
-        <p className="text-center text-xs text-muted-foreground/40 pb-2">Pantry AI · Semad Tech</p>
+        <p className="text-center text-xs text-muted-foreground/40 pb-2">Mento · Semad Tech</p>
       </main>
 
       <BottomNav />

@@ -29,7 +29,7 @@ export default function SplashPage() {
 
         {/* Wordmark */}
         <div className="text-center space-y-1.5 animate-fade-in" style={{ animationDelay: "0.25s" }}>
-          <h1 className="text-3xl font-bold tracking-tight">Pantry AI</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Mento</h1>
           <p className="text-sm text-muted-foreground">Semad Tech</p>
         </div>
       </div>

@@ -32,7 +32,7 @@ const FAIL_MESSAGES: Record<FailReason, string> = {
   denied:
     "Camera access was denied. You can enter the barcode number manually below.",
   unsupported:
-    "Barcode scanning isn't supported on this browser. Try opening Pantry AI in Chrome or Safari, or enter the barcode manually.",
+    "Barcode scanning isn't supported on this browser. Try opening Mento in Chrome or Safari, or enter the barcode manually.",
   hardware:
     "We couldn't access your camera. Please check your device settings or enter the barcode manually.",
 }

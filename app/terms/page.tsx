@@ -14,7 +14,7 @@ export default function TermsPage() {
       <h1 className="text-2xl font-bold tracking-tight mb-4">Terms of Service</h1>
       <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
         <p>
-          By using <strong className="text-foreground">Pantry AI</strong>, you agree to these
+          By using <strong className="text-foreground">Mento</strong>, you agree to these
           terms. The app is provided as-is by Semad Tech for personal pantry management use.
         </p>
         <p>

@@ -14,7 +14,7 @@ export default function PrivacyPage() {
       <h1 className="text-2xl font-bold tracking-tight mb-4">Privacy Policy</h1>
       <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
         <p>
-          <strong className="text-foreground">Pantry AI</strong> is operated by Semad Tech.
+          <strong className="text-foreground">Mento</strong> is operated by Semad Tech.
           We are committed to protecting your privacy.
         </p>
         <p>

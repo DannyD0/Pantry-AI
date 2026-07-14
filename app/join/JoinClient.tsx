@@ -62,7 +62,7 @@ export function JoinClient() {
           <h1 className="text-2xl font-bold tracking-tight">Join Household</h1>
           {code ? (
             <p className="text-sm text-muted-foreground">
-              You were invited to join a shared pantry on Pantry AI.
+              You were invited to join a shared pantry on Mento.
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">No invite code found in this link.</p>
