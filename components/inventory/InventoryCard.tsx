@@ -8,6 +8,7 @@ import { FuelGauge } from "./FuelGauge"
 import { CategoryBadge } from "./CategoryBadge"
 import { UpdateWeightDialog } from "./UpdateWeightDialog"
 import { getStockPercent } from "@/lib/logic/depletion"
+import { formatQuantityLeft } from "@/lib/logic/units"
 import type { InventoryItem } from "@/lib/supabase/types"
 
 function getExpiryStatus(expiryDate: string | null): {
@@ -129,7 +130,7 @@ export function InventoryCard({ item, onUpdateWeight, onDelete, onEdit }: Invent
                 <>
                   <div className="flex items-baseline gap-1.5">
                     <span className={`text-sm font-semibold leading-none ${pctColor}`}>
-                      {item.current_weight.toFixed(0)}{item.unit} left
+                      {formatQuantityLeft(item.current_weight, item.unit)}
                     </span>
                     {hasVelocity && (
                       <span className="text-[10px] text-primary/70 font-medium">AI</span>

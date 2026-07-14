@@ -45,3 +45,12 @@ export function normalizeUnit(raw: string | null | undefined): string | null {
   if (!raw) return null
   return UNIT_ALIASES[raw.trim().toLowerCase()] ?? null
 }
+
+/**
+ * Format a remaining-quantity label, e.g. "888g left" or "60 left" for count
+ * items (the unit word is dropped for "count" since it's self-explanatory).
+ */
+export function formatQuantityLeft(weight: number, unit: string): string {
+  const rounded = Math.round(weight)
+  return unit === "count" ? `${rounded} left` : `${rounded}${unit} left`
+}
