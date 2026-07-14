@@ -70,7 +70,19 @@ interface AddItemDialogProps {
   title?: string
 }
 
-const CATEGORIES: Category[] = ["Protein", "Vegetable", "Grain", "Dairy", "Essential", "Other"]
+const CATEGORIES: Category[] = [
+  "Fruits & Vegetables",
+  "Bakery",
+  "Grains & Pasta",
+  "Deli & Meat",
+  "Seafood",
+  "Dairy & Eggs",
+  "Frozen Foods",
+  "Beverages",
+  "Snacks",
+  "Essentials",
+  "Other",
+]
 const FREQUENCIES: { value: UsageFrequency; label: string }[] = [
   { value: "daily", label: "Daily" },
   { value: "thrice_weekly", label: "3× per week" },

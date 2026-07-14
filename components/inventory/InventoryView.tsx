@@ -12,7 +12,18 @@ import { BottomNav } from "@/components/layout/BottomNav"
 import type { Category, InventoryItem } from "@/lib/supabase/types"
 
 const CATEGORY_ORDER: (Category | "All")[] = [
-  "All", "Protein", "Vegetable", "Grain", "Dairy", "Essential", "Other",
+  "All",
+  "Fruits & Vegetables",
+  "Bakery",
+  "Grains & Pasta",
+  "Deli & Meat",
+  "Seafood",
+  "Dairy & Eggs",
+  "Frozen Foods",
+  "Beverages",
+  "Snacks",
+  "Essentials",
+  "Other",
 ]
 
 function toPrefill(item: InventoryItem): AddItemPrefill {

@@ -22,16 +22,16 @@ export function assignPriorityTier(
   const name = itemName.toLowerCase()
 
   if (
-    category === "Dairy" ||
-    category === "Vegetable" ||
+    category === "Dairy & Eggs" ||
+    category === "Fruits & Vegetables" ||
     HIGH_KEYWORDS.some((k) => name.includes(k))
   ) {
     return "HIGH"
   }
 
   if (
-    category === "Essential" ||
-    category === "Grain" ||
+    category === "Essentials" ||
+    category === "Grains & Pasta" ||
     LOW_KEYWORDS.some((k) => name.includes(k))
   ) {
     return "LOW"

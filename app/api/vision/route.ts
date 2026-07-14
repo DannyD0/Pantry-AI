@@ -32,7 +32,19 @@ function rateLimitCheck(userId: string): number | null {
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5MB
 
-const VALID_CATEGORIES = ["Protein", "Vegetable", "Grain", "Dairy", "Essential", "Other"]
+const VALID_CATEGORIES = [
+  "Fruits & Vegetables",
+  "Bakery",
+  "Grains & Pasta",
+  "Deli & Meat",
+  "Seafood",
+  "Dairy & Eggs",
+  "Frozen Foods",
+  "Beverages",
+  "Snacks",
+  "Essentials",
+  "Other",
+]
 
 export async function POST(request: NextRequest) {
   // Require an authenticated user
@@ -88,7 +100,7 @@ export async function POST(request: NextRequest) {
             },
             {
               type: "text",
-              text: 'Identify this grocery item. Return ONLY valid JSON (no markdown, no explanation): { "item_name": string, "category": "Protein" | "Vegetable" | "Grain" | "Dairy" | "Essential" | "Other", "estimated_quantity": number, "unit": string }',
+              text: `Identify this grocery item. Return ONLY valid JSON (no markdown, no explanation): { "item_name": string, "category": ${VALID_CATEGORIES.map((c) => `"${c}"`).join(" | ")}, "estimated_quantity": number, "unit": string }`,
             },
           ],
         },

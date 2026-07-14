@@ -30,7 +30,7 @@ CREATE TABLE inventory (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   item_name TEXT NOT NULL,
   brand TEXT,
-  category TEXT CHECK (category IN ('Protein', 'Vegetable', 'Grain', 'Dairy', 'Essential', 'Other')),
+  category TEXT CHECK (category IN ('Fruits & Vegetables', 'Bakery', 'Grains & Pasta', 'Deli & Meat', 'Seafood', 'Dairy & Eggs', 'Frozen Foods', 'Beverages', 'Snacks', 'Essentials', 'Other')),
   original_weight FLOAT NOT NULL,
   current_weight FLOAT NOT NULL,
   unit TEXT DEFAULT 'oz',
