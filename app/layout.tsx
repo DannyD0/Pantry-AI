@@ -7,12 +7,12 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Mento",
+  title: "Remto",
   description: "Minimalist grocery inventory & predictive depletion tracker",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Mento",
+    title: "Remto",
     startupImage: "/apple-touch-icon.png",
   },
   icons: {

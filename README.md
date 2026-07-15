@@ -1,4 +1,4 @@
-# Mento
+# Remto
 # Your own personal AI pantry manager
 
 A full-stack pantry inventory management app powered by AI, designed to help households track what they have, predict when they'll run out, and reduce food waste.
@@ -6,7 +6,7 @@ A full-stack pantry inventory management app powered by AI, designed to help hou
 
 ## What It Does
 
-Mento lets you build and manage a personal grocery inventory by scanning items with your camera. The app uses the **Claude Vision API** to identify grocery items from photos, then tracks usage patterns to predict depletion timelines, so you know what you need before you run out.
+Remto lets you build and manage a personal grocery inventory by scanning items with your camera. The app uses the **Claude Vision API** to identify grocery items from photos, then tracks usage patterns to predict depletion timelines, so you know what you need before you run out.
 
 **Core features:**
 - AI-powered item recognition via Claude Vision API

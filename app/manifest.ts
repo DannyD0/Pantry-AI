@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Mento",
-    short_name: "Mento",
+    name: "Remto",
+    short_name: "Remto",
     description: "Minimalist grocery inventory & predictive depletion tracker",
     start_url: "/splash",
     display: "standalone",

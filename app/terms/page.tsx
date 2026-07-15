@@ -37,16 +37,16 @@ export default function TermsPage() {
 
       <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
         <p>
-          These Terms of Service govern your use of <strong className="text-foreground">Mento</strong>,
-          a smart pantry tracking app built by Semad Tech. By creating an account or using Mento,
+          These Terms of Service govern your use of <strong className="text-foreground">Remto</strong>,
+          a smart pantry tracking app built by Semad Tech. By creating an account or using Remto,
           you agree to these terms. Please read them carefully.
         </p>
-        <p>If you do not agree to these terms, do not use Mento.</p>
+        <p>If you do not agree to these terms, do not use Remto.</p>
 
         <section className="space-y-2">
-          <SectionHeading>1. Who Can Use Mento</SectionHeading>
+          <SectionHeading>1. Who Can Use Remto</SectionHeading>
           <p>
-            You must be at least 13 years old to use Mento. By using the app, you confirm that you
+            You must be at least 13 years old to use Remto. By using the app, you confirm that you
             meet this requirement.
           </p>
           <p>
@@ -57,15 +57,15 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-2">
-          <SectionHeading>2. What Mento Is and Is Not</SectionHeading>
+          <SectionHeading>2. What Remto Is and Is Not</SectionHeading>
           <p>
-            Mento is a personal pantry inventory and prediction tool. It helps you track what you
+            Remto is a personal pantry inventory and prediction tool. It helps you track what you
             have at home, estimate when you might run out, and manage your shopping list.
           </p>
-          <SubHeading>Mento is NOT</SubHeading>
+          <SubHeading>Remto is NOT</SubHeading>
           <List
             items={[
-              "A food safety tool. Do not rely on Mento's expiry date tracking as the sole basis for food safety decisions. Always use your own judgment when assessing whether food is safe to consume.",
+              "A food safety tool. Do not rely on Remto's expiry date tracking as the sole basis for food safety decisions. Always use your own judgment when assessing whether food is safe to consume.",
               "A nutritional or dietary advice tool.",
               "A guarantee of accuracy. Depletion predictions are estimates based on your usage patterns. Actual results will vary.",
             ]}
@@ -88,7 +88,7 @@ export default function TermsPage() {
         <section className="space-y-2">
           <SectionHeading>4. Household Sharing</SectionHeading>
           <p>
-            Mento allows you to share your pantry with household members. By inviting someone to
+            Remto allows you to share your pantry with household members. By inviting someone to
             your household:
           </p>
           <List
@@ -110,12 +110,12 @@ export default function TermsPage() {
           <p>You agree NOT to:</p>
           <List
             items={[
-              "Use Mento for any unlawful purpose",
+              "Use Remto for any unlawful purpose",
               "Attempt to gain unauthorized access to other users' data",
-              "Reverse engineer, copy, or distribute any part of the Mento app",
-              "Use Mento to transmit spam, malware, or harmful content",
+              "Reverse engineer, copy, or distribute any part of the Remto app",
+              "Use Remto to transmit spam, malware, or harmful content",
               "Impersonate another person or entity",
-              "Attempt to overload or disrupt Mento's servers or infrastructure",
+              "Attempt to overload or disrupt Remto's servers or infrastructure",
             ]}
           />
         </section>
@@ -123,7 +123,7 @@ export default function TermsPage() {
         <section className="space-y-2">
           <SectionHeading>6. AI Features</SectionHeading>
           <p>
-            Mento uses artificial intelligence to identify grocery items from photos you upload. By
+            Remto uses artificial intelligence to identify grocery items from photos you upload. By
             using this feature:
           </p>
           <List
@@ -138,8 +138,8 @@ export default function TermsPage() {
         <section className="space-y-2">
           <SectionHeading>7. Intellectual Property</SectionHeading>
           <p>
-            Mento and all its content, features, and functionality are owned by Semad Tech. You may
-            not copy, modify, distribute, or create derivative works based on Mento without our
+            Remto and all its content, features, and functionality are owned by Semad Tech. You may
+            not copy, modify, distribute, or create derivative works based on Remto without our
             explicit written permission.
           </p>
           <p>
@@ -150,31 +150,31 @@ export default function TermsPage() {
 
         <section className="space-y-2">
           <SectionHeading>8. Limitation of Liability</SectionHeading>
-          <p>Mento is provided &quot;as is&quot; without warranties of any kind. Semad Tech is not liable for:</p>
+          <p>Remto is provided &quot;as is&quot; without warranties of any kind. Semad Tech is not liable for:</p>
           <List
             items={[
               "Inaccurate depletion predictions or shopping recommendations",
               "Food spoilage or waste resulting from reliance on app predictions",
               "Loss of data due to technical failures",
-              "Any indirect, incidental, or consequential damages arising from your use of Mento",
+              "Any indirect, incidental, or consequential damages arising from your use of Remto",
             ]}
           />
           <p>
             To the maximum extent permitted by law, Semad Tech&apos;s total liability to you for any
-            claims arising from your use of Mento shall not exceed the amount you paid to use the
-            app in the past 12 months. Since Mento is currently free, this limit is $0.
+            claims arising from your use of Remto shall not exceed the amount you paid to use the
+            app in the past 12 months. Since Remto is currently free, this limit is $0.
           </p>
         </section>
 
         <section className="space-y-2">
           <SectionHeading>9. Termination</SectionHeading>
-          <p>You may stop using Mento and delete your account at any time from your Profile settings.</p>
+          <p>You may stop using Remto and delete your account at any time from your Profile settings.</p>
           <p>
-            We may suspend or terminate your access to Mento at any time, with or without notice,
+            We may suspend or terminate your access to Remto at any time, with or without notice,
             if we believe you have violated these terms or for any other reason at our discretion.
           </p>
           <p>
-            Upon termination, your right to use Mento ends immediately. We will delete your data in
+            Upon termination, your right to use Remto ends immediately. We will delete your data in
             accordance with our Privacy Policy.
           </p>
         </section>
@@ -187,7 +187,7 @@ export default function TermsPage() {
             notify users via email or an in-app notice at least 14 days before the changes take
             effect.
           </p>
-          <p>Continued use of Mento after changes constitutes acceptance of the updated terms.</p>
+          <p>Continued use of Remto after changes constitutes acceptance of the updated terms.</p>
         </section>
 
         <section className="space-y-2">

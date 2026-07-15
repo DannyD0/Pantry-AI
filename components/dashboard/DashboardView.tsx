@@ -82,7 +82,7 @@ export function DashboardView({ userId, householdId, userName }: { userId: strin
         <div className="pt-14 pb-6">
           <div className="space-y-0.5 min-w-0">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
-              Mento
+              Remto
             </p>
             <h1
               className="font-bold tracking-tight"

@@ -37,11 +37,11 @@ export default function PrivacyPage() {
 
       <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
         <p>
-          <strong className="text-foreground">Mento</strong> is a smart pantry tracking app built
+          <strong className="text-foreground">Remto</strong> is a smart pantry tracking app built
           by Semad Tech. We take your privacy seriously. This Privacy Policy explains what data we
           collect, how we use it, how we protect it, and your rights over it.
         </p>
-        <p>By using Mento, you agree to the practices described in this policy.</p>
+        <p>By using Remto, you agree to the practices described in this policy.</p>
 
         <section className="space-y-2">
           <SectionHeading>1. What Data We Collect</SectionHeading>
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
             items={[
               "Your location",
               "Your contacts",
-              "Payment information (Mento is currently free)",
+              "Payment information (Remto is currently free)",
               "Any data from your device beyond what you explicitly enter",
             ]}
           />
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
 
         <section className="space-y-2">
           <SectionHeading>2. How We Use Your Data</SectionHeading>
-          <p>We use your data only to provide and improve the Mento app:</p>
+          <p>We use your data only to provide and improve the Remto app:</p>
           <List
             items={[
               "To authenticate you and keep your account secure",
@@ -154,7 +154,7 @@ export default function PrivacyPage() {
           <List
             items={[
               "Supabase: our database and authentication provider, stores your data securely in the United States (us-east-1, North Virginia)",
-              "Vercel: our hosting provider, serves the Mento app globally",
+              "Vercel: our hosting provider, serves the Remto app globally",
               "Resend: our email provider, used only to send account and invite emails",
               "Anthropic: processes photos you upload for item identification only",
             ]}
@@ -221,7 +221,7 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <SectionHeading>8. Children&apos;s Privacy</SectionHeading>
           <p>
-            Mento is not directed at children under 13. We do not knowingly collect personal
+            Remto is not directed at children under 13. We do not knowingly collect personal
             information from children under 13. If you believe a child has provided us with their
             information, please contact us and we will delete it promptly.
           </p>
@@ -232,7 +232,7 @@ export default function PrivacyPage() {
           <p>
             We may update this Privacy Policy from time to time. When we do, we will update the
             &quot;Last Updated&quot; date at the top of this page. For significant changes, we will
-            notify users via email or an in-app notice. Continued use of Mento after changes
+            notify users via email or an in-app notice. Continued use of Remto after changes
             constitutes acceptance of the updated policy.
           </p>
         </section>

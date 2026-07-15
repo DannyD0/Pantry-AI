@@ -8,7 +8,7 @@ export default function LoginPage() {
         <div className="text-center space-y-2">
           <div className="text-4xl">🛒</div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Mento
+            Remto
           </h1>
           <p className="text-sm text-muted-foreground">
             Smart pantry tracking
