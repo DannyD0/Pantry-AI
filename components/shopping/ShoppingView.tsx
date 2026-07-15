@@ -147,19 +147,16 @@ export function ShoppingView({ userId, householdId }: { userId: string; househol
             {/* To Buy section */}
             {pending.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center">
-                  <ShoppingCart className="h-7 w-7 text-muted-foreground" />
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <ShoppingCart className="h-7 w-7 text-primary" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-semibold text-sm">All clear</h3>
-                  <p className="text-sm text-muted-foreground max-w-[220px]">
-                    Nothing to buy. Tap Add Item, or let low-stock auto-add things.
+                  <h3 className="font-semibold text-sm">Your shopping list is empty</h3>
+                  <p className="text-sm text-muted-foreground max-w-[260px]">
+                    As items in your pantry run low, they&apos;ll appear here automatically. You can
+                    also add items manually.
                   </p>
                 </div>
-                <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
-                  <Plus className="h-4 w-4" />
-                  Add Item
-                </Button>
               </div>
             ) : (
               <section className="space-y-2">

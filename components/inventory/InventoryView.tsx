@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Plus, Package, AlertTriangle } from "lucide-react"
+import { Plus, AlertTriangle, ShoppingBag, Clock, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { InventoryCard } from "./InventoryCard"
 import { AddItemFlow } from "./AddItemFlow"
@@ -170,18 +170,46 @@ export function InventoryView({ userId, householdId }: { userId: string; househo
         )}
 
         {!loading && !error && items.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center">
-              <Package className="h-8 w-8 text-muted-foreground" />
+          <div className="flex flex-col gap-3 py-4">
+            <div className="bg-card border border-border rounded-2xl p-5 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <ShoppingBag className="h-6 w-6 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-sm">Add your first item</h3>
+                <p className="text-xs text-muted-foreground max-w-[240px]">
+                  Scan a barcode, take a photo, or type it in manually.
+                </p>
+              </div>
+              <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add Item
+              </Button>
             </div>
-            <div className="space-y-1">
-              <h3 className="font-semibold">Pantry is empty</h3>
-              <p className="text-sm text-muted-foreground">Add your first item to start tracking.</p>
+
+            <div className="bg-card border border-border rounded-2xl p-5 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center">
+                <Clock className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-sm">Remto predicts when you&apos;ll run out</h3>
+                <p className="text-xs text-muted-foreground max-w-[240px]">
+                  Once you add items, Remto learns your usage and tells you exactly when to restock.
+                </p>
+              </div>
             </div>
-            <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Add Item
-            </Button>
+
+            <div className="bg-card border border-border rounded-2xl p-5 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center">
+                <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-sm">Your shopping list builds itself</h3>
+                <p className="text-xs text-muted-foreground max-w-[240px]">
+                  When something runs low, it appears on your list automatically.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
