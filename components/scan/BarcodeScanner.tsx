@@ -186,61 +186,10 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
     onDetect(code)
   }
 
-  // ── Failed: denied / unsupported / hardware, inline message + manual entry ──
-  if (status === "failed") {
-    return (
-      <div className="flex flex-col items-center gap-6 py-6">
-        <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center">
-          <Scan className="h-7 w-7 text-muted-foreground" />
-        </div>
-        <div className="text-center space-y-1 px-4">
-          <p className="font-semibold text-sm">
-            {failReason === "unsupported"
-              ? "Scanner not supported"
-              : failReason === "denied"
-              ? "Camera access denied"
-              : "Camera unavailable"}
-          </p>
-          <p className="text-xs text-muted-foreground">{FAIL_MESSAGES[failReason]}</p>
-        </div>
-        <form onSubmit={handleManualSubmit} className="w-full max-w-xs space-y-3 px-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="manual_code" className="text-xs text-muted-foreground">Barcode / UPC</Label>
-            <Input
-              id="manual_code"
-              placeholder="e.g. 0123456789012"
-              value={manualCode}
-              onChange={(e) => setManualCode(e.target.value)}
-              inputMode="numeric"
-              maxLength={20}
-              autoFocus
-            />
-          </div>
-          <Button type="submit" className="w-full" size="sm" disabled={!manualCode.trim()}>
-            Look Up Product
-          </Button>
-        </form>
-        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    )
-  }
-
-  // ── Starting camera ──────────────────────────────────────────────────────
-  if (status === "starting") {
-    return (
-      <div className="flex flex-col items-center gap-4 py-12">
-        <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-        <p className="text-sm text-muted-foreground">Starting camera…</p>
-        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    )
-  }
-
-  // ── Active Scanning / Detected ───────────────────────────────────────────
+  // The <video> element stays mounted across every status so `videoRef` is
+  // always attached by the time the camera stream is ready — mounting it only
+  // in the "active" branch meant the stream was attached to a null ref and
+  // silently dropped (no error, just a permanently blank feed).
   return (
     <div className="flex flex-col gap-4">
       {/* Viewfinder */}
@@ -253,33 +202,88 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
           autoPlay
         />
 
-        {/* Scanning frame overlay */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-52 h-32">
-            {/* Corner brackets */}
-            <span className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary rounded-tl-sm" />
-            <span className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary rounded-tr-sm" />
-            <span className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary rounded-bl-sm" />
-            <span className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary rounded-br-sm" />
+        {(status === "active" || status === "detected") && (
+          <>
+            {/* Dim edges (behind the scan frame so the frame stays crisp) */}
+            <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.55)_100%)]" />
 
-            {/* Scan line */}
-            {status === "active" && (
-              <div className="absolute left-1 right-1 top-1/2 h-px bg-primary/70 animate-pulse" />
-            )}
+            {/* Scanning frame overlay */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative w-52 h-32">
+                {/* Corner brackets */}
+                <span className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary rounded-tl-sm" />
+                <span className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary rounded-tr-sm" />
+                <span className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary rounded-bl-sm" />
+                <span className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary rounded-br-sm" />
 
-            {/* Detected flash */}
-            {status === "detected" && (
-              <div className="absolute inset-0 rounded-sm bg-primary/20 flex items-center justify-center">
-                <span className="text-xs font-mono text-primary font-bold tracking-wider">
-                  {detectedValue}
-                </span>
+                {/* Scan line */}
+                {status === "active" && (
+                  <div className="absolute left-1 right-1 top-1/2 h-px bg-primary/70 animate-pulse" />
+                )}
+
+                {/* Detected flash */}
+                {status === "detected" && (
+                  <div className="absolute inset-0 rounded-sm bg-primary/20 flex items-center justify-center">
+                    <span className="text-xs font-mono text-primary font-bold tracking-wider">
+                      {detectedValue}
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Dim edges */}
-        <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.55)_100%)]" />
+            {/* Status label */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+              <span className="text-xs text-white/80 bg-black/50 px-3 py-1 rounded-full">
+                {status === "detected" ? "Barcode detected!" : "Align barcode within frame"}
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* Starting overlay */}
+        {status === "starting" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/70">
+            <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <p className="text-sm text-white/80">Starting camera…</p>
+          </div>
+        )}
+
+        {/* Failed overlay: denied / unsupported / hardware, inline message + manual entry */}
+        {status === "failed" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-black/90 py-6 overflow-y-auto">
+            <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center">
+              <Scan className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <div className="text-center space-y-1 px-4">
+              <p className="font-semibold text-sm text-white">
+                {failReason === "unsupported"
+                  ? "Scanner not supported"
+                  : failReason === "denied"
+                  ? "Camera access denied"
+                  : "Camera unavailable"}
+              </p>
+              <p className="text-xs text-white/70">{FAIL_MESSAGES[failReason]}</p>
+            </div>
+            <form onSubmit={handleManualSubmit} className="w-full max-w-xs space-y-3 px-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="manual_code" className="text-xs text-white/70">Barcode / UPC</Label>
+                <Input
+                  id="manual_code"
+                  placeholder="e.g. 0123456789012"
+                  value={manualCode}
+                  onChange={(e) => setManualCode(e.target.value)}
+                  inputMode="numeric"
+                  maxLength={20}
+                  autoFocus
+                />
+              </div>
+              <Button type="submit" className="w-full" size="sm" disabled={!manualCode.trim()}>
+                Look Up Product
+              </Button>
+            </form>
+          </div>
+        )}
 
         {/* Close button */}
         <Button
@@ -290,41 +294,36 @@ export function BarcodeScanner({ onDetect, onCancel }: BarcodeScannerProps) {
         >
           <X className="h-4 w-4" />
         </Button>
-
-        {/* Status label */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-          <span className="text-xs text-white/80 bg-black/50 px-3 py-1 rounded-full">
-            {status === "detected" ? "Barcode detected!" : "Align barcode within frame"}
-          </span>
-        </div>
       </div>
 
-      {/* Manual fallback toggle */}
-      {!showManual ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground gap-1.5 mx-auto"
-          onClick={() => setShowManual(true)}
-        >
-          <Keyboard className="h-3.5 w-3.5" />
-          Enter barcode manually
-        </Button>
-      ) : (
-        <form onSubmit={handleManualSubmit} className="flex gap-2">
-          <Input
-            placeholder="Enter UPC / barcode"
-            value={manualCode}
-            onChange={(e) => setManualCode(e.target.value)}
-            inputMode="numeric"
-            maxLength={20}
-            className="flex-1"
-            autoFocus
-          />
-          <Button type="submit" size="sm" disabled={!manualCode.trim()}>
-            Go
+      {/* Manual fallback toggle (only while actively scanning; "failed" has its own form above) */}
+      {(status === "active" || status === "detected") && (
+        !showManual ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground gap-1.5 mx-auto"
+            onClick={() => setShowManual(true)}
+          >
+            <Keyboard className="h-3.5 w-3.5" />
+            Enter barcode manually
           </Button>
-        </form>
+        ) : (
+          <form onSubmit={handleManualSubmit} className="flex gap-2">
+            <Input
+              placeholder="Enter UPC / barcode"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              inputMode="numeric"
+              maxLength={20}
+              className="flex-1"
+              autoFocus
+            />
+            <Button type="submit" size="sm" disabled={!manualCode.trim()}>
+              Go
+            </Button>
+          </form>
+        )
       )}
     </div>
   )
