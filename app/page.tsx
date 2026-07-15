@@ -10,21 +10,38 @@ export default async function HomePage() {
 
   if (!session) redirect("/login")
 
-  const userName =
-    (session.user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
-    session.user.email?.split("@")[0] ||
-    ""
-
   const { data: memberRecord } = await supabase
     .from("household_members")
     .select("household_id")
     .eq("user_id", session.user.id)
     .single()
 
+  const householdId = memberRecord?.household_id ?? null
+
+  if (!session.user.user_metadata?.onboarding_complete) {
+    const { count } = householdId
+      ? await supabase
+          .from("inventory")
+          .select("*", { count: "exact", head: true })
+          .eq("household_id", householdId)
+      : { count: 0 }
+
+    if (count && count > 0) {
+      await supabase.auth.updateUser({ data: { onboarding_complete: true } })
+    } else {
+      redirect("/onboarding")
+    }
+  }
+
+  const userName =
+    (session.user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
+    session.user.email?.split("@")[0] ||
+    ""
+
   return (
     <DashboardView
       userId={session.user.id}
-      householdId={memberRecord?.household_id ?? null}
+      householdId={householdId}
       userName={userName}
     />
   )

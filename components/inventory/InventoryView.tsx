@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Plus, Package, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { InventoryCard } from "./InventoryCard"
@@ -42,9 +43,18 @@ function toPrefill(item: InventoryItem): AddItemPrefill {
 export function InventoryView({ userId, householdId }: { userId: string; householdId: string | null }) {
   const { items, loading, error, addItem, updateItem, updateWeight, deleteItem } = useInventory(userId, householdId)
   const { toast } = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [addOpen, setAddOpen] = useState(false)
   const [editItem, setEditItem] = useState<InventoryItem | null>(null)
   const [activeFilter, setActiveFilter] = useState<Category | "All">("All")
+
+  useEffect(() => {
+    if (searchParams.get("addItem") === "1") {
+      setAddOpen(true)
+      router.replace("/inventory")
+    }
+  }, [searchParams, router])
 
   const handleAdd = async (payload: AddItemPayload) => {
     const result = await addItem(payload)
